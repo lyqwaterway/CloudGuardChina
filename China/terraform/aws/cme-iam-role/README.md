@@ -25,7 +25,7 @@ provider "aws" {
 The provider credentials can be provided either as static credentials or as [Environment Variables](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#environment-variables).
 - Static credentials can be provided by adding an access_key and secret_key in /terraform/aws/cme-iam-role/**terraform.tfvars** file as follows:
 ```
-region     = "us-east-1"
+region     = "ch-north-1"
 access_key = "my-access-key"
 secret_key = "my-secret-key"
 ```
