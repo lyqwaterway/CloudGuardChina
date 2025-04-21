@@ -4,9 +4,11 @@
 vpc_cidr = "10.0.0.0/16"
 public_subnets_map = {
   "cn-north-1a" = 1
+  "cn-north-1b" = 2
 }
 private_subnets_map = {
-  "cn-north-1a" = 2
+  "cn-north-1a" = 3
+  "cn-north-1b" = 4
 }
 subnets_bit_length = 8
 
@@ -14,7 +16,6 @@ subnets_bit_length = 8
 gateway_name = "Check-Point-Cluster-tf"
 gateway_instance_type = "c5.xlarge"
 key_name = "cn-publickey"
-allocate_and_associate_eip = true
 volume_size = 100
 volume_encryption = "alias/aws/ebs"
 enable_instance_connect = false
