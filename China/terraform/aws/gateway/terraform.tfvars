@@ -2,9 +2,9 @@
 
 // --- VPC Network Configuration ---
 vpc_id = "vpc-12345678"
-public_subnet_id = "subnet-abc123"
-private_subnet_id = "subnet-def456"
-private_route_table = "subnet-abc456"
+public_subnet_id = "subnet-123456"
+private_subnet_id = "subnet-345678"
+private_route_table = "rtb-12345678"
 
 // --- EC2 Instance Configuration ---
 gateway_name = "Check-Point-Gateway-tf"
@@ -13,7 +13,7 @@ key_name = "publickey"
 allocate_and_associate_eip = true
 volume_size = 100
 volume_encryption = "alias/aws/ebs"
-enable_instance_connect = true
+enable_instance_connect = false
 disable_instance_termination = false
 metadata_imdsv2_required = true
 instance_tags = {
