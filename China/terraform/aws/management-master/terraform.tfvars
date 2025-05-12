@@ -12,16 +12,16 @@ key_name = "publickey"
 allocate_and_associate_eip = true
 volume_size = 100
 volume_encryption = "alias/aws/ebs"
-enable_instance_connect = true
+enable_instance_connect = false
 disable_instance_termination = false
 metadata_imdsv2_required = true
 instance_tags = {
-  test = "cgns"
-  target = "management"
+  key1 = "value1"
+  key2 = "value2"
 }
 
 // --- IAM Permissions ---
-iam_permissions = "Create with read-write permissions"
+iam_permissions = "Create with read permissions"
 predefined_role = ""
 sts_roles = []
 
