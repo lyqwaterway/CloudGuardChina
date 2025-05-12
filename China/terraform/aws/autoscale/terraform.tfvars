@@ -2,7 +2,7 @@
 
 // --- Environment ---
 prefix = "env1"
-asg_name = "asg"
+asg_name = "autoscaling_group"
 
 // --- VPC Network Configuration ---
 vpc_id = "vpc-12345678"
