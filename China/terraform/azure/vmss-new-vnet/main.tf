@@ -263,6 +263,14 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
     storage_account_type = module.common.storage_account_type
   }
 
+#   dynamic "plan" {
+#     for_each = local.custom_image_condition ? [] : [1]
+#     content {
+#       name = module.common.vm_os_sku
+#       publisher = module.common.publisher
+#       product = module.common.vm_os_offer
+#     }
+#   }
 
   computer_name_prefix = lower(var.vmss_name)
   admin_username = module.common.admin_username
