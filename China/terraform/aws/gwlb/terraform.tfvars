@@ -2,7 +2,7 @@
 
 // --- VPC Network Configuration ---
 vpc_id = "vpc-12345678"
-subnet_ids = ["subnet-abc123", "subnet-def456"]
+subnet_ids = ["subnet-123456", "subnet-345678"]
 
 // --- General Settings ---
 key_name = "publickey"
