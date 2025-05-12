@@ -24,7 +24,6 @@ bootstrap_script                = "PLEASE ENTER CUSTOM SCRIPT OR LEAVE EMPTY DOU
 allow_upload_download           = "PLEASE ENTER true or false"                                           # true
 authentication_type             = "PLEASE ENTER AUTHENTICATION TYPE"                                     # "Password"
 availability_zones_num          = "PLEASE ENTER NUMBER OF AVAILABILITY ZONES"                            # 1
-number_of_vm_instances          = "PLEASE ENTER NUMBER OF VM INSTANCES"                          # 2    
 minimum_number_of_vm_instances  = "PLEASE ENTER MINIMUM NUMBER OF VM INSTANCES"                          # 2
 maximum_number_of_vm_instances  = "PLEASE ENTER MAXIMUM NUMBER OF VM INSTANCES"                          # 10
 management_name                 = "PLEASE ENTER MANAGEMENT NAME"                                         # "mgmt"
