@@ -27,8 +27,8 @@ asn = "65000"
 // --- Check Point CloudGuard Network Security Management Server Configuration ---
 management_deploy = true
 management_instance_type = "m5.xlarge"
-management_version = "R81.20-PAYG"
-management_password_hash = ""
+management_version = "R81.20-BYOL"
+management_password_hash = "12345678"
 management_maintenance_mode_password_hash = "" # For R81.10 and below the management_password_hash is used also as maintenance-mode password.
 management_permissions = "Create with read-write permissions"
 management_predefined_role = ""
