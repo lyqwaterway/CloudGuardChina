@@ -246,6 +246,15 @@ resource "azurerm_virtual_machine" "mgmt-vm-instance" {
     type = module.common.vm_instance_identity
   }
 
+#   dynamic "plan" {
+#     for_each = local.custom_image_condition ? [
+#     ] : [1]
+#     content {
+#       name = module.common.vm_os_sku
+#       publisher = module.common.publisher
+#       product = module.common.vm_os_offer
+#     }
+#   }
 
   boot_diagnostics {
     enabled = module.common.boot_diagnostics
