@@ -370,6 +370,15 @@ resource "azurerm_virtual_machine" "vm-instance-availability-set" {
     disk_size_gb = module.common.disk_size
   }
 
+#   dynamic "plan" {
+#     for_each = local.custom_image_condition ? [
+#     ] : [1]
+#     content {
+#       name = module.common.vm_os_sku
+#       publisher = module.common.publisher
+#       product = module.common.vm_os_offer
+#     }
+#   }
 
   os_profile {
     computer_name = "${lower(var.cluster_name)}${count.index+1}"
@@ -455,7 +464,15 @@ resource "azurerm_virtual_machine" "vm-instance-availability-zone" {
     disk_size_gb = module.common.disk_size
   }
 
-
+#   dynamic "plan" {
+#     for_each = local.custom_image_condition ? [
+#     ] : [1]
+#     content {
+#       name = module.common.vm_os_sku
+#       publisher = module.common.publisher
+#       product = module.common.vm_os_offer
+#     }
+#   }
 
   os_profile {
     computer_name = "${lower(var.cluster_name)}${count.index+1}"
