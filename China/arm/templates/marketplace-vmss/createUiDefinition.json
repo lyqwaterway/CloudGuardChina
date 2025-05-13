@@ -2209,7 +2209,7 @@
       "configurationTemplate": "[steps('autoprovision').configurationTemplate]",
       "adminEmail": "[steps('autoprovision').adminEmail]",
       "deploymentMode": "[steps('autoprovision').deploymentMode]",
-      "instanceLevelPublicIP": "[steps('chkp').instanceLevelPublicIP]",
+      "instanceLevelPublicIP": "[steps('autoprovision').instanceLevelPublicIP]",
       "lbsTargetRGName": "[steps('chkp').lbsTargetRGName]",
       "elbResourceId": "[steps('chkp').elbResourceId]",
       "elbTargetBEAddressPoolName": "[steps('chkp').elbBEAddressPoolName]",
