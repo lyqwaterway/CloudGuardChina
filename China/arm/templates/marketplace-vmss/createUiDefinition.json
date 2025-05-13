@@ -72,15 +72,6 @@
             }
           },
           {
-            "name": "configurationTemplateInfoBox",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[equals(steps('autoprovision').upgrading, 'yes')]",
-            "options": {
-              "icon": "Info",
-              "text": "Use a different configuration template name than in your existing CloudGuard VMSS solution."
-            }
-          },
-          {
             "name": "configurationTemplate",
             "type": "Microsoft.Common.TextBox",
             "label": "Configuration template name",
@@ -318,87 +309,6 @@
             }
           },
           {
-            "name": "lbsTargetRGName",
-            "type": "Microsoft.Common.TextBox",
-            "visible": "[equals(steps('autoprovision').upgrading, 'yes')]",
-            "label": "Target load balancers resource group name",
-            "defaultValue": "",
-            "toolTip": "The name of the Target Load Balancers Resource Group.",
-            "constraints": {
-              "required": true,
-              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
-              "validationMessage": "Resource Group only allow alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis"
-            }
-          },
-          {
-            "name": "elbResourceId",
-            "type": "Microsoft.Common.TextBox",
-            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ILBOnly')))]",
-            "label": "Target external load balancer resource ID",
-            "defaultValue": "",
-            "toolTip": "The Resource ID of the Target External Load Balancer.",
-            "constraints": {
-              "required": true,
-              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
-              "validationMessage": "Resource Id only allow alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis"
-            }
-          },
-          {
-            "name": "elbInfoBox",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ILBOnly')))]",
-            "options": {
-              "icon": "Info",
-              "text": "Make sure you have created a new backend address pool for the target external load balancer."
-            }
-          },
-          {
-            "name": "elbBEAddressPoolName",
-            "type": "Microsoft.Common.TextBox",
-            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ILBOnly')))]",
-            "label": "External load balancer's new backend pool name",
-            "toolTip": "The name of the new Target External Load Balancer's Backend Pool.",
-            "constraints": {
-              "required": true,
-              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
-              "validationMessage": "Only alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis are allowed"
-            }
-          },
-          {
-            "name": "ilbResourceId",
-            "type": "Microsoft.Common.TextBox",
-            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ELBOnly')))]",
-            "label": "Target internal load balancer resource ID",
-            "defaultValue": "",
-            "toolTip": "The Resource ID of the Target Internal Load Balancer.",
-            "constraints": {
-              "required": true,
-              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
-              "validationMessage": "Resource Id only allow alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis"
-            }
-          },
-          {
-            "name": "ilbInfoBox",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ELBOnly')))]",
-            "options": {
-              "icon": "Info",
-              "text": "Make sure you have created a new backend address pool for the target internal load balancer."
-            }
-          },
-          {
-            "name": "ilbBEAddressPoolName",
-            "type": "Microsoft.Common.TextBox",
-            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ELBOnly')))]",
-            "label": "Internal load balancer's new backend pool name",
-            "toolTip": "The name of the new target internal load balancer's backend pool.",
-            "constraints": {
-              "required": true,
-              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
-              "validationMessage": "Only alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis are allowed"
-            }
-          },
-          {
             "name": "mgmtInterfaceOpt1",
             "type": "Microsoft.Common.DropDown",
             "label": "Management interface and IP address",
@@ -607,7 +517,7 @@
           {
             "name": "upgradeVmssInfoBox",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[equals(steps('autoprovision').upgrading, 'yes')]",
+            "visible": "[equals(steps('chkp').upgrading, 'yes')]",
             "options": {
               "icon": "Warning",
               "text": "All the configurations below must be similar to the existing CloudGuard VMSS solution.\n\nNote that the target load balancers are the ones connected to your existing CloudGuard VMSS solution.\n\nSee the Deployment Guide for more information."
@@ -644,6 +554,96 @@
             "options": {
               "icon": "Error",
               "text": "Maximum number of gateways is lower than initial number of gateways"
+            }
+          },
+          {
+            "name": "configurationTemplateInfoBox",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('chkp').upgrading, 'yes')]",
+            "options": {
+              "icon": "Info",
+              "text": "Use a different configuration template name than in your existing CloudGuard VMSS solution."
+            }
+          },
+          {
+            "name": "lbsTargetRGName",
+            "type": "Microsoft.Common.TextBox",
+            "visible": "[equals(steps('autoprovision').upgrading, 'yes')]",
+            "label": "Target load balancers resource group name",
+            "defaultValue": "",
+            "toolTip": "The name of the Target Load Balancers Resource Group.",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
+              "validationMessage": "Resource Group only allow alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis"
+            }
+          },
+          {
+            "name": "elbResourceId",
+            "type": "Microsoft.Common.TextBox",
+            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ILBOnly')))]",
+            "label": "Target external load balancer resource ID",
+            "defaultValue": "",
+            "toolTip": "The Resource ID of the Target External Load Balancer.",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
+              "validationMessage": "Resource Id only allow alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis"
+            }
+          },
+          {
+            "name": "elbInfoBox",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ILBOnly')))]",
+            "options": {
+              "icon": "Info",
+              "text": "Make sure you have created a new backend address pool for the target external load balancer."
+            }
+          },
+          {
+            "name": "elbBEAddressPoolName",
+            "type": "Microsoft.Common.TextBox",
+            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ILBOnly')))]",
+            "label": "External load balancer's new backend pool name",
+            "toolTip": "The name of the new Target External Load Balancer's Backend Pool.",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
+              "validationMessage": "Only alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis are allowed"
+            }
+          },
+          {
+            "name": "ilbResourceId",
+            "type": "Microsoft.Common.TextBox",
+            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ELBOnly')))]",
+            "label": "Target internal load balancer resource ID",
+            "defaultValue": "",
+            "toolTip": "The Resource ID of the Target Internal Load Balancer.",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
+              "validationMessage": "Resource Id only allow alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis"
+            }
+          },
+          {
+            "name": "ilbInfoBox",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ELBOnly')))]",
+            "options": {
+              "icon": "Info",
+              "text": "Make sure you have created a new backend address pool for the target internal load balancer."
+            }
+          },
+          {
+            "name": "ilbBEAddressPoolName",
+            "type": "Microsoft.Common.TextBox",
+            "visible": "[and(equals(steps('autoprovision').upgrading, 'yes'), not(equals(steps('autoprovision').deploymentMode, 'ELBOnly')))]",
+            "label": "Internal load balancer's new backend pool name",
+            "toolTip": "The name of the new target internal load balancer's backend pool.",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-z0-9A-Z_\\-\\.\\/\\(\\)]",
+              "validationMessage": "Only alphanumeric characters, periods, underscores, hyphens, slash, and parenthesis are allowed"
             }
           },
           {
@@ -2201,20 +2201,20 @@
       "authenticationType": "[basics('auth').authenticationType]",
       "adminPassword": "[basics('auth').password]",
       "sshPublicKey": "[basics('auth').sshPublicKey]",
-      "upgrading": "[steps('autoprovision').upgrading]",
+      "upgrading": "[steps('chkp').upgrading]",
       "vmName": "[basics('gatewayScaleSetNameUi')]",
-      "instanceCount": "[steps('autoprovision').vmCount]",
-      "maxInstanceCount": "[steps('autoprovision').maxVmCount]",
+      "instanceCount": "[steps('chkp').vmCount]",
+      "maxInstanceCount": "[steps('chkp').maxVmCount]",
       "managementServer": "[steps('autoprovision').managementServer]",
       "configurationTemplate": "[steps('autoprovision').configurationTemplate]",
       "adminEmail": "[steps('autoprovision').adminEmail]",
       "deploymentMode": "[steps('autoprovision').deploymentMode]",
-      "instanceLevelPublicIP": "[steps('autoprovision').instanceLevelPublicIP]",
-      "lbsTargetRGName": "[steps('autoprovision').lbsTargetRGName]",
-      "elbResourceId": "[steps('autoprovision').elbResourceId]",
-      "elbTargetBEAddressPoolName": "[steps('autoprovision').elbBEAddressPoolName]",
-      "ilbResourceId": "[steps('autoprovision').ilbResourceId]",
-      "ilbTargetBEAddressPoolName": "[steps('autoprovision').ilbBEAddressPoolName]",
+      "instanceLevelPublicIP": "[steps('chkp').instanceLevelPublicIP]",
+      "lbsTargetRGName": "[steps('chkp').lbsTargetRGName]",
+      "elbResourceId": "[steps('chkp').elbResourceId]",
+      "elbTargetBEAddressPoolName": "[steps('chkp').elbBEAddressPoolName]",
+      "ilbResourceId": "[steps('chkp').ilbResourceId]",
+      "ilbTargetBEAddressPoolName": "[steps('chkp').ilbBEAddressPoolName]",
       "mgmtInterfaceOpt1": "[steps('autoprovision').mgmtInterfaceOpt1]",
       "mgmtInterfaceOpt2": "[steps('autoprovision').mgmtInterfaceOpt2]",
       "mgmtIPaddress": "[steps('autoprovision').mgmtIPaddress]",
