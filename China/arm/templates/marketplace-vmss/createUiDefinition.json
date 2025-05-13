@@ -61,67 +61,6 @@
         "bladeTitle": "CloudGuard VMSS settings",
         "elements": [
           {
-            "name": "upgrading",
-            "type": "Microsoft.Common.OptionsGroup",
-            "label": "Are you upgrading your CloudGuard VMSS solution?",
-            "defaultValue": "No",
-            "toolTip": "Select 'Yes' if you are upgrading your CloudGuard VMSS solution.",
-            "constraints": {
-              "allowedValues": [
-                {
-                  "label": "No",
-                  "value": "no"
-                },
-                {
-                  "label": "Yes",
-                  "value": "yes"
-                }
-              ]
-            }
-          },
-          {
-            "name": "upgradeVmssInfoBox",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[equals(steps('autoprovision').upgrading, 'yes')]",
-            "options": {
-              "icon": "Warning",
-              "text": "All the configurations below must be similar to the existing CloudGuard VMSS solution.\n\nNote that the target load balancers are the ones connected to your existing CloudGuard VMSS solution.\n\nSee the Deployment Guide for more information."
-            }
-          },
-          {
-            "name": "vmCount",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Initial number of gateways",
-            "defaultValue": "2",
-            "toolTip": "The initial number of gateways",
-            "constraints": {
-              "required": true,
-              "regex": "^[1-9][0-9]{0,1}$",
-              "validationMessage": "Please enter a number in the range 1-99."
-            }
-          },
-          {
-            "name": "maxVmCount",
-            "type": "Microsoft.Common.TextBox",
-            "label": "Maximum number of gateways",
-            "defaultValue": "10",
-            "toolTip": "The maximum number of gateways",
-            "constraints": {
-              "required": true,
-              "regex": "^[1-9][0-9]{0,1}$",
-              "validationMessage": "Please enter a number in the range 1-99."
-            }
-          },
-          {
-            "name": "numGwsValidation",
-            "type": "Microsoft.Common.InfoBox",
-            "visible": "[greater(steps('autoprovision').vmCount, steps('autoprovision').maxVmCount)]",
-            "options": {
-              "icon": "Error",
-              "text": "Maximum number of gateways is lower than initial number of gateways"
-            }
-          },
-          {
             "name": "managementServer",
             "type": "Microsoft.Common.TextBox",
             "label": "Management name",
@@ -639,13 +578,74 @@
       },
       {
         "name": "chkp",
-        "label": "Check Point CloudGuard settings",
+        "label": "CloudGuard Advanced Settings",
         "subLabel": {
           "preValidation": "Configure CloudGuard settings",
           "postValidation": "Done"
         },
         "bladeTitle": "CloudGuard settings",
         "elements": [
+          {
+            "name": "upgrading",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Are you upgrading your CloudGuard VMSS solution?",
+            "defaultValue": "No",
+            "toolTip": "Select 'Yes' if you are upgrading your CloudGuard VMSS solution.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": "no"
+                },
+                {
+                  "label": "Yes",
+                  "value": "yes"
+                }
+              ]
+            }
+          },
+          {
+            "name": "upgradeVmssInfoBox",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[equals(steps('autoprovision').upgrading, 'yes')]",
+            "options": {
+              "icon": "Warning",
+              "text": "All the configurations below must be similar to the existing CloudGuard VMSS solution.\n\nNote that the target load balancers are the ones connected to your existing CloudGuard VMSS solution.\n\nSee the Deployment Guide for more information."
+            }
+          },
+          {
+            "name": "vmCount",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Initial number of gateways",
+            "defaultValue": "2",
+            "toolTip": "The initial number of gateways",
+            "constraints": {
+              "required": true,
+              "regex": "^[1-9][0-9]{0,1}$",
+              "validationMessage": "Please enter a number in the range 1-99."
+            }
+          },
+          {
+            "name": "maxVmCount",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Maximum number of gateways",
+            "defaultValue": "10",
+            "toolTip": "The maximum number of gateways",
+            "constraints": {
+              "required": true,
+              "regex": "^[1-9][0-9]{0,1}$",
+              "validationMessage": "Please enter a number in the range 1-99."
+            }
+          },
+          {
+            "name": "numGwsValidation",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": "[greater(steps('autoprovision').vmCount, steps('autoprovision').maxVmCount)]",
+            "options": {
+              "icon": "Error",
+              "text": "Maximum number of gateways is lower than initial number of gateways"
+            }
+          },
           {
             "name": "cloudGuardVersion",
             "type": "Microsoft.Common.DropDown",
