@@ -524,7 +524,7 @@
                 }
               ]
             },
-            "visible": "[not(or(equals(steps('chkp').cloudGuardVersion, 'R81'), equals(steps('chkp').cloudGuardVersion, 'R80.40'))))]"
+            "visible": "[not(equals(steps('chkp').cloudGuardVersion, 'R80.40'))]"
           },
           {
             "visible": "[equals(steps('chkp-advanced').installationType, 'management')]",
