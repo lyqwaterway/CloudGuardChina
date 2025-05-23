@@ -101,15 +101,6 @@
                   "label": "Bring Your Own License",
                   "value": "Bring Your Own License"
                 }
-//                ,
-//                {
-//                  "label": "Pay As You Go (NGTP)",
-//                  "value": "Pay As You Go (NGTP)"
-//                },
-//                {
-//                  "label": "Pay As You Go (NGTX)",
-//                  "value": "Pay As You Go (NGTX)"
-//                }
               ]
             }
           },
