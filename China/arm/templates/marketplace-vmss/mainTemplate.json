@@ -19,7 +19,7 @@
     "cloudGuardVersion": {
       "type": "string",
       "allowedValues": [
-        "R80.40 - Bring Your Own License",
+//        "R80.40 - Bring Your Own License",
 //        "R80.40 - Pay As You Go (NGTP)",
 //        "R80.40 - Pay As You Go (NGTX)",
 //        "R81 - Bring Your Own License",
@@ -511,7 +511,7 @@
     "templateVersion": "20240904",
     "location": "[parameters('location')]",
     "offers": {
-      "R80.40 - Bring Your Own License": "BYOL",
+//      "R80.40 - Bring Your Own License": "BYOL",
 //      "R80.40 - Pay As You Go (NGTP)": "NGTP",
 //      "R80.40 - Pay As You Go (NGTX)": "NGTX",
 //      "R81 - Bring Your Own License": "BYOL",
@@ -526,10 +526,10 @@
     },
     "offer": "[variables('offers')[parameters('cloudGuardVersion')]]",
     "osVersions": {
-      "R80.40 - Bring Your Own License": "R8040",
+//      "R80.40 - Bring Your Own License": "R8040",
 //      "R80.40 - Pay As You Go (NGTP)": "R8040",
 //      "R80.40 - Pay As You Go (NGTX)": "R8040",
-      "R81 - Bring Your Own License": "R81",
+//      "R81 - Bring Your Own License": "R81",
 //      "R81 - Pay As You Go (NGTP)": "R81",
 //      "R81 - Pay As You Go (NGTX)": "R81",
       "R81.10 - Bring Your Own License": "R8110",
@@ -778,7 +778,7 @@
     "storageAccountName": "[concat('bootdiag', uniqueString(variables('resourceGroup').id, deployment().name))]",
     "storageAccountType": "Standard_LRS",
     "diskSize100GB": 100,
-    "additionalDiskSizeGB": "[if(contains('R8040 R8110 R8120', variables('osVersion')), 0, parameters('additionalDiskSizeGB'))]",
+    "additionalDiskSizeGB": "[if(contains('R8110 R8120', variables('osVersion')), 0, parameters('additionalDiskSizeGB'))]",
     "diskSizeGB": "[add(variables('additionalDiskSizeGB'), variables('diskSize100GB'))]",
     "enableFloatingIP": "[equals(parameters('floatingIP'), 'yes')]",
     "customData": "[concat('#!/usr/bin/python3 /etc/cloud_config.py\n', '\n', 'installationType=\"', variables('installationType'), '\"', '\n', 'allowUploadDownload=\"', variables('allowUploadDownload'), '\"', '\n', 'osVersion=\"', variables('osVersion'), '\"', '\n', 'templateName=\"', variables('templateName'), '\"', '\n', 'isBlink=\"', variables('isBlink'), '\"', '\n', 'templateVersion=\"', variables('templateVersion'), '\"', '\n', 'bootstrapScript64=\"', variables('bootstrapScript64'), '\"', '\n', 'location=\"', variables('location'), '\"', '\n', 'sicKey=\"', variables('sicKey'), '\"', '\n', 'customMetrics=\"', variables('customMetrics'), '\"', '\n', 'adminShell=\"', parameters('adminShell'), '\"', '\n', 'MaintenanceModePassword=\"', parameters('MaintenanceModePasswordHash'), '\"', '\n', 'passwordHash=\"', parameters('SerialConsolePasswordHash'), '\"', '\n')]",
