@@ -12,7 +12,7 @@
     "cloudGuardVersion": {
       "type": "string",
       "allowedValues": [
-        "R80.40 - Bring Your Own License",
+//        "R80.40 - Bring Your Own License",
 //        "R80.40 - Pay As You Go (MGMT25)",
         "R81 - Bring Your Own License",
 //        "R81 - Pay As You Go (MGMT25)",
@@ -279,8 +279,8 @@
     "templateVersion": "20240904",
     "location": "[parameters('location')]",
     "offers": {
-      "R80.40 - Bring Your Own License": "BYOL",
-      "R80.40 - Pay As You Go (MGMT25)": "MGMT25",
+//      "R80.40 - Bring Your Own License": "BYOL",
+//      "R80.40 - Pay As You Go (MGMT25)": "MGMT25",
       "R81 - Bring Your Own License": "BYOL",
       "R81 - Pay As You Go (MGMT25)": "MGMT25",
       "R81.10 - Bring Your Own License": "BYOL",
@@ -292,8 +292,8 @@
     },
     "offer": "[variables('offers')[parameters('cloudGuardVersion')]]",
     "osVersions": {
-      "R80.40 - Bring Your Own License": "R8040",
-      "R80.40 - Pay As You Go (MGMT25)": "R8040",
+//      "R80.40 - Bring Your Own License": "R8040",
+//      "R80.40 - Pay As You Go (MGMT25)": "R8040",
       "R81 - Bring Your Own License": "R81",
       "R81 - Pay As You Go (MGMT25)": "R81",
       "R81.10 - Bring Your Own License": "R8110",
