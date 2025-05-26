@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "subscriptionId": {
@@ -24,9 +24,12 @@
 //        "R81.10 - Pay As You Go (NGTX)",
         "R81.20 - Bring Your Own License"
 //        "R81.20 - Pay As You Go (NGTP)",
-//        "R81.20 - Pay As You Go (NGTX)"
+//        "R81.20 - Pay As You Go (NGTX)",
+//        "R82 - Bring Your Own License",
+//        "R82 - Pay As You Go (NGTP)",
+//        "R82 - Pay As You Go (NGTX)"
       ],
-      "defaultValue": "R81.10 - Bring Your Own License",
+      "defaultValue": "R81.20 - Bring Your Own License",
       "metadata": {
         "description": "Version of Check Point CloudGuard"
       }
@@ -64,13 +67,6 @@
         "description": "Email address to notify if there are any scaling operations"
       }
     },
-    "adminPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Administrator password"
-      },
-      "defaultValue": ""
-    },
     "authenticationType": {
       "type": "string",
       "allowedValues": [
@@ -89,6 +85,27 @@
         "description": "Administrator SSH public key"
       }
     },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Administrator password"
+      },
+      "defaultValue": ""
+    },
+    "MaintenanceModePasswordHash": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "Description": "Maintenance mode password hash, relevant only for R81.20 and higher versions"
+      }
+    },
+    "SerialConsolePasswordHash": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "Description": "Optional parameter, used to enable serial console connection in case of SSH key as authentication type"
+      }
+    },
     "vmName": {
       "type": "string",
       "metadata": {
@@ -104,7 +121,7 @@
     },
     "adminShell": {
       "type": "string",
-      "defaultValue": "/bin/bash",
+      "defaultValue": "/etc/cli.sh",
       "allowedValues": [
         "/etc/cli.sh",
         "/bin/bash",
@@ -253,6 +270,15 @@
         "description": "The IP address used to manage the VMSS instances."
       }
     },
+    "additionalDiskSizeGB": {
+      "type": "int",
+      "defaultValue": 0,
+      "metadata": {
+        "description": "Amount of additional disk space (in GB), not relevant for R81.20 and below"
+      },
+      "minValue": 0,
+      "maxValue": 3995
+    },
     "diskType": {
       "type": "string",
       "defaultValue": "Standard_LRS",
@@ -372,12 +398,26 @@
     "NewNsgName": {
       "type": "string",
       "defaultValue": "[concat(parameters('vmName'),'-nsg')]"
+    },
+    "addStorageAccountIpRules": {
+      "type": "bool",
+      "metadata": {
+        "description": "Add Storage Account IP rules that allow access to the Serial Console only for IPs based on their geographic location, based on https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/serial-console-linux#use-serial-console-with-custom-boot-diagnostics-storage-account-firewall-enabled"
+      },
+      "defaultValue": false
+    },
+    "storageAccountAdditionalIps": {
+      "type": "array",
+      "metadata": {
+        "description": "IPs/CIDRs that are allowed access to the Storage Account"
+      },
+      "defaultValue": []
     }
   },
   "variables": {
     "resourceGroup": "[resourceGroup()]",
     "templateName": "gwlb",
-    "templateVersion": "20231002",
+    "templateVersion": "20240904",
     "location": "[parameters('location')]",
     "offers": {
       "R81.10 - Bring Your Own License": "BYOL",
@@ -385,7 +425,10 @@
       "R81.10 - Pay As You Go (NGTX)": "NGTX",
       "R81.20 - Bring Your Own License": "BYOL",
       "R81.20 - Pay As You Go (NGTP)": "NGTP",
-      "R81.20 - Pay As You Go (NGTX)": "NGTX"
+      "R81.20 - Pay As You Go (NGTX)": "NGTX",
+      "R82 - Bring Your Own License": "BYOL",
+      "R82 - Pay As You Go (NGTP)": "NGTP",
+      "R82 - Pay As You Go (NGTX)": "NGTX"
     },
     "offer": "[variables('offers')[parameters('cloudGuardVersion')]]",
     "osVersions": {
@@ -394,14 +437,269 @@
       "R81.10 - Pay As You Go (NGTX)": "R8110",
       "R81.20 - Bring Your Own License": "R8120",
       "R81.20 - Pay As You Go (NGTP)": "R8120",
-      "R81.20 - Pay As You Go (NGTX)": "R8120"
+      "R81.20 - Pay As You Go (NGTX)": "R8120",
+      "R82 - Bring Your Own License": "R82",
+      "R82 - Pay As You Go (NGTP)": "R82",
+      "R82 - Pay As You Go (NGTX)": "R82"
     },
     "osVersion": "[variables('osVersions')[parameters('cloudGuardVersion')]]",
+    "serialConsoleGeographies": {
+      "eastasia": [
+        "20.205.69.28",
+        "20.195.85.180"
+      ],
+      "southeastasia": [
+        "20.205.69.28",
+        "20.195.85.180"
+      ],
+      "australiacentral": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "australiacentral2": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "australiaeast": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "australiasoutheast": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "brazilsouth": [
+        "91.234.136.63",
+        "20.206.0.194"
+      ],
+      "brazilsoutheast": [
+        "91.234.136.63",
+        "20.206.0.194"
+      ],
+      "canadacentral": [
+        "52.228.86.177",
+        "52.242.40.90"
+      ],
+      "canadaeast": [
+        "52.228.86.177",
+        "52.242.40.90"
+      ],
+      "northeurope": [
+        "52.146.139.220",
+        "20.105.209.72"
+      ],
+      "westeurope": [
+        "52.146.139.220",
+        "20.105.209.72"
+      ],
+      "francecentral": [
+        "20.111.0.244",
+        "52.136.191.10"
+      ],
+      "francesouth": [
+        "20.111.0.244",
+        "52.136.191.10"
+      ],
+      "germanynorth": [
+        "51.116.75.88",
+        "20.52.95.48"
+      ],
+      "germanywestcentral": [
+        "51.116.75.88",
+        "20.52.95.48"
+      ],
+      "centralindia": [
+        "20.192.168.150",
+        "20.192.153.104"
+      ],
+      "southindia": [
+        "20.192.168.150",
+        "20.192.153.104"
+      ],
+      "westindia": [
+        "20.192.168.150",
+        "20.192.153.104"
+      ],
+      "japaneast": [
+        "20.43.70.205",
+        "20.189.228.222"
+      ],
+      "japanwest": [
+        "20.43.70.205",
+        "20.189.228.222"
+      ],
+      "koreacentral": [
+        "20.200.196.96",
+        "52.147.119.29"
+      ],
+      "koreasouth": [
+        "20.200.196.96",
+        "52.147.119.29"
+      ],
+      "norwaywest": [
+        "20.100.1.184",
+        "51.13.138.76"
+      ],
+      "norwayeast": [
+        "20.100.1.184",
+        "51.13.138.76"
+      ],
+      "switzerlandnorth": [
+        "20.208.4.98",
+        "51.107.251.190"
+      ],
+      "switzerlandwest": [
+        "20.208.4.98",
+        "51.107.251.190"
+      ],
+      "uaecentral": [
+        "20.45.95.66",
+        "20.38.141.5"
+      ],
+      "uaenorth": [
+        "20.45.95.66",
+        "20.38.141.5"
+      ],
+      "uksouth": [
+        "20.90.132.144",
+        "20.58.68.62"
+      ],
+      "ukwest": [
+        "20.90.132.144",
+        "20.58.68.62"
+      ],
+      "swedencentral": [
+        "51.12.72.223",
+        "51.12.22.174"
+      ],
+      "swedensouth": [
+        "51.12.72.223",
+        "51.12.22.174"
+      ],
+      "centralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "eastus2": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "eastus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "northcentralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "southcentralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westus2": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westus3": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westcentralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "eastus2euap": [
+        "20.45.242.18",
+        "20.51.21.252"
+      ],
+      "centraluseuap": [
+        "20.45.242.18",
+        "20.51.21.252"
+      ],
+      "usgovarizona": [
+        "20.141.10.130",
+        "52.127.55.131"
+      ],
+      "usgovvirginia": [
+        "20.141.10.130",
+        "52.127.55.131"
+      ],
+      "usgovtexas": [
+        "20.141.10.130",
+        "52.127.55.131"
+      ],
+      "chinanorth" : [
+        "139.217.51.16",
+        "139.217.171.176"
+      ],
+      "chinanorth2" : [
+        "40.73.96.39",
+        "40.73.33.105"],
+      "chinaeast" : [
+        "139.217.171.176",
+        "139.217.51.16"],
+      "chinaeast2" : [
+        "40.73.33.105",
+        "40.73.96.39"
+      ]
+    },
+    "serialConsoleIps": "[if(contains(variables('serialConsoleGeographies'),variables('location')),variables('serialConsoleGeographies')[variables('location')],createArray())]",
+    "storageAccountIps": "[concat(variables('SerialConsoleIps'),parameters('storageAccountAdditionalIps'))]",
     "isBlink": true,
     "subnet1Name": "[parameters('subnet1Name')]",
     "storageAccountName": "[concat('bootdiag', uniqueString(variables('resourceGroup').id, deployment().name))]",
     "storageAccountType": "Standard_LRS",
-    "customData": "[concat('#!/usr/bin/python3 /etc/cloud_config.py\n', '\n', 'installationType=\"', variables('installationType'), '\"', '\n', 'allowUploadDownload=\"', variables('allowUploadDownload'), '\"', '\n', 'osVersion=\"', variables('osVersion'), '\"', '\n', 'templateName=\"', variables('templateName'), '\"', '\n', 'isBlink=\"', variables('isBlink'), '\"', '\n', 'templateVersion=\"', variables('templateVersion'), '\"', '\n', 'bootstrapScript64=\"', variables('bootstrapScript64'), '\"', '\n', 'location=\"', variables('location'), '\"', '\n', 'sicKey=\"', variables('sicKey'), '\"', '\n', 'customMetrics=\"', variables('customMetrics'), '\"', '\n', 'adminShell=\"', parameters('adminShell'), '\"', '\n')]",
+    "diskSize100GB": 100,
+    "additionalDiskSizeGB": "[if(contains('R8110 R8120', variables('osVersion')), 0, parameters('additionalDiskSizeGB'))]",
+    "diskSizeGB": "[add(variables('additionalDiskSizeGB'), variables('diskSize100GB'))]",
+    "vxlanParametersForR82": "kernel_parameters:\n  sim:\n    - sim_enable_vxlan=3\n    - sim_enable_gre=3\n  fw: \n    - fw_enable_vxlan=1\n    - fw_enable_gre=1",
+    "cloudConfigParams":[
+      "[concat('installationType=\\\"', variables('installationType'), '\\\"')]",
+      "[concat('allowUploadDownload=\\\"', variables('allowUploadDownload'), '\\\"')]",
+      "[concat('osVersion=\\\"', variables('osVersion'), '\\\"')]",
+      "[concat('templateName=\\\"', variables('templateName'), '\\\"')]",
+      "[concat('isBlink=\\\"', variables('isBlink'), '\\\"')]",
+      "[concat('templateVersion=\\\"', variables('templateVersion'), '\\\"')]",
+      "[concat('bootstrapScript64=\\\"', variables('bootstrapScript64'), '\\\"')]",
+      "[concat('location=\\\"', variables('location'), '\\\"')]",
+      "[concat('sicKey=\\\"', variables('sicKey'), '\\\"')]",
+      "[concat('customMetrics=\\\"', variables('customMetrics'), '\\\"')]",
+      "[concat('adminShell=\\\"', parameters('adminShell'), '\\\"')]",
+      "[concat('MaintenanceModePassword=\\\"', parameters('MaintenanceModePasswordHash'), '\\\"')]",
+      "[concat('passwordHash=\\\"', parameters('SerialConsolePasswordHash'), '\\\"')]"
+    ],
+    "customData": "[concat('#cloud-config','\n', if(equals(variables('osVersion'),'R82'),variables('vxlanParametersForR82'), ''),'\n', 'runcmd:\n  - python3 /etc/cloud_config.py ', join(variables('cloudConfigParams'), ' '))]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
     "imagePublisher": "sinoage",
     "imageReferenceBYOL": {
@@ -493,8 +791,9 @@
       }
     },
     "upgrading": "[equals(parameters('upgrading'), 'yes')]",
-    "networkSetupURL": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/vnet-1-subnet-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
-    "loadBalacerSetupURL": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/gateway-load-balancers.json', parameters('_artifactsLocationSasToken')))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/',parameters('_artifactsLocation'))]",
+    "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-1-subnet-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
+    "loadBalacerSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/gateway-load-balancers.json', parameters('_artifactsLocationSasToken')))]",
     "lbsTargetRGName": "[parameters('lbsTargetRGName')]",
     "lbRGName": "[if(variables('upgrading'), variables('lbsTargetRGName'), resourceGroup().name)]",
     "loadBalancerSetupId": "[resourceId(variables('lbRGName'), 'Microsoft.Resources/deployments', 'loadBalancerSetup')]",
@@ -535,7 +834,8 @@
       "chinanorth",
       "chinanorth2",
       "chinanorth3",
-      "eastasia"
+      "eastasia",
+      "italynorth"
     ],
     "availabilityZonesProperty": "[range(1, parameters('availabilityZonesNum'))]",
     "mgmtInterface": "[if(equals(parameters('instanceLevelPublicIP'), 'yes'), parameters('mgmtInterfaceOpt1'), 'eth0-private')]",
@@ -564,7 +864,7 @@
   "resources": [
     {
       "apiVersion": "2020-06-01",
-      "name": "pid-6f13b00a-7546-4ab2-be9f-c66815cc6c8b-partnercenter",
+      "name": "pid-5432b4df-d783-57a2-b65f-39f4bca4974a",
       "type": "Microsoft.Resources/deployments",
       "properties": {
         "mode": "Incremental",
@@ -740,7 +1040,12 @@
       "properties": {
         "supportsHttpsTrafficOnly": true,
         "allowBlobPublicAccess": false,
-        "minimumTlsVersion": "TLS1_2"
+        "minimumTlsVersion": "TLS1_2",
+        "networkAcls": {
+          "bypass": "None",
+          "defaultAction": "[if(parameters('addStorageAccountIpRules'), 'Deny', 'Allow')]",
+          "ipRules": "[if(parameters('addStorageAccountIpRules'), map(variables('storageAccountIps'), lambda('ip',createObject('action','Allow','value',lambdaVariables('ip')))), createArray())]"
+        }
       },
       "location": "[variables('location')]",
       "sku": {
@@ -793,9 +1098,10 @@
           "mode": "Manual"
         },
         "virtualMachineProfile": {
-          "UserData": "[base64(concat(variables('customData'), '\n', 'vnet=\"', if(equals(parameters('vnetNewOrExisting'), 'new'), reference('networkNewSetup').outputs.vnetAddressPrefix.value, reference('networkExistingSetup').outputs.vnetAddressPrefix.value), '\"', '\n' ))]",
+          "UserData": "[base64(concat(variables('customData'), '\n'))]",
           "storageProfile": {
             "osDisk": {
+              "diskSizeGB": "[variables('diskSizeGB')]",
               "caching": "ReadWrite",
               "createOption": "FromImage",
               "managedDisk": {
@@ -808,7 +1114,6 @@
             "adminPassword": "[parameters('adminPassword')]",
             "adminUsername": "[concat('not','used')]",
             "computerNamePrefix": "[toLower(parameters('vmName'))]",
-            "customData": "[base64(concat(variables('customData'), '\n', 'vnet=\"', if(equals(parameters('vnetNewOrExisting'), 'new'), reference('networkNewSetup').outputs.vnetAddressPrefix.value, reference('networkExistingSetup').outputs.vnetAddressPrefix.value), '\"', '\n' ))]",
             "linuxConfiguration": "[variables('linuxConfiguration')]"
           },
           "networkProfile": {
@@ -817,7 +1122,7 @@
                 "name": "eth0",
                 "properties": {
                   "primary": true,
-                  "enableIPForwarding": false,
+                  "enableIPForwarding": true,
                   "enableAcceleratedNetworking": true,
                   "networkSecurityGroup": "[if(parameters('deployNewNSG') , variables('NewNsgReference') , parameters('ExistingNSG'))]",
                   "ipConfigurations": [
@@ -839,7 +1144,7 @@
           "diagnosticsProfile": {
             "bootDiagnostics": {
               "enabled": "true",
-              "storageUri": "[reference(variables('storageAccountId'), '2019-06-01').primaryEndpoints.blob]"
+              "storageUri": "[reference(variables('storageAccountId'), '2023-01-01').primaryEndpoints.blob]"
             }
           }
         },
