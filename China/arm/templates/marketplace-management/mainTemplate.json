@@ -12,16 +12,11 @@
     "cloudGuardVersion": {
       "type": "string",
       "allowedValues": [
-//        "R80.40 - Bring Your Own License",
-//        "R80.40 - Pay As You Go (MGMT25)",
+        "R80.40 - Bring Your Own License",
         "R81 - Bring Your Own License",
-//        "R81 - Pay As You Go (MGMT25)",
         "R81.10 - Bring Your Own License",
-//        "R81.10 - Pay As You Go (MGMT25)",
         "R81.20 - Bring Your Own License",
-//        "R81.20 - Pay As You Go (MGMT25)"
         "R82 - Bring Your Own License"
-//        "R82 - Pay As You Go (MGMT25)"
       ],
       "defaultValue": "R81.20 - Bring Your Own License",
       "metadata": {
@@ -279,8 +274,8 @@
     "templateVersion": "20240904",
     "location": "[parameters('location')]",
     "offers": {
-//      "R80.40 - Bring Your Own License": "BYOL",
-//      "R80.40 - Pay As You Go (MGMT25)": "MGMT25",
+      "R80.40 - Bring Your Own License": "BYOL",
+      "R80.40 - Pay As You Go (MGMT25)": "MGMT25",
       "R81 - Bring Your Own License": "BYOL",
       "R81 - Pay As You Go (MGMT25)": "MGMT25",
       "R81.10 - Bring Your Own License": "BYOL",
@@ -292,8 +287,8 @@
     },
     "offer": "[variables('offers')[parameters('cloudGuardVersion')]]",
     "osVersions": {
-//      "R80.40 - Bring Your Own License": "R8040",
-//      "R80.40 - Pay As You Go (MGMT25)": "R8040",
+      "R80.40 - Bring Your Own License": "R8040",
+      "R80.40 - Pay As You Go (MGMT25)": "R8040",
       "R81 - Bring Your Own License": "R81",
       "R81 - Pay As You Go (MGMT25)": "R81",
       "R81.10 - Bring Your Own License": "R8110",
@@ -918,7 +913,6 @@
       ],
       "location": "[variables('location')]",
       "name": "[parameters('vmName')]",
-//      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
       "identity": "[variables('identity')]",
       "properties": {
         "UserData": "[variables('customData64')]",
