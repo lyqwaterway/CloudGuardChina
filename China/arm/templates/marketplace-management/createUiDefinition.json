@@ -85,10 +85,6 @@
                   "label": "R81.20",
                   "value": "R81.20"
                 }
-//                {
-//                  "label": "R82",
-//                  "value": "R82"
-//                }
               ]
             }
           },
@@ -105,10 +101,6 @@
                   "label": "Bring Your Own License",
                   "value": "Bring Your Own License"
                 }
-//                {
-//                  "label": "Pay As You Go (MGMT25)",
-//                  "value": "Pay As You Go (MGMT25)"
-//                }
               ]
             }
           },
