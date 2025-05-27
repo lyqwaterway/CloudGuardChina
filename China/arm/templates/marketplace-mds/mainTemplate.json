@@ -12,22 +12,14 @@
     "cloudGuardVersion": {
       "type": "string",
       "allowedValues": [
-        "R80.40 - Bring Your Own License",
-        "R81 - Bring Your Own License",
         "R81.10 - Bring Your Own License",
-        "R81.20 - Bring Your Own License"
+        "R81.20 - Bring Your Own License",
+        "R82 - Bring Your Own License"
       ],
-      "defaultValue": "R81.10 - Bring Your Own License",
+      "defaultValue": "R81.20 - Bring Your Own License",
       "metadata": {
         "description": "Version of Check Point CloudGuard"
       }
-    },
-    "adminPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Administrator password"
-      },
-      "defaultValue": ""
     },
     "authenticationType": {
       "type": "string",
@@ -47,6 +39,27 @@
         "description": "Administrator SSH public key"
       }
     },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Administrator password"
+      },
+      "defaultValue": ""
+    },
+    "MaintenanceModePasswordHash": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "Description": "Maintenance mode password hash, relevant only for R81.20 and higher versions"
+      }
+    },
+    "SerialConsolePasswordHash": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "Description": "Optional parameter, used to enable serial console connection in case of SSH key as authentication type"
+      }
+    },
     "vmName": {
       "type": "string",
       "metadata": {
@@ -62,7 +75,7 @@
     },
     "adminShell": {
       "type": "string",
-      "defaultValue": "/bin/bash",
+      "defaultValue": "/etc/cli.sh",
       "allowedValues": [
         "/etc/cli.sh",
         "/bin/bash",
@@ -191,7 +204,7 @@
     },
     "msi": {
       "type": "bool",
-      "defaultValue": false,
+      "defaultValue": true,
       "metadata": {
         "description": "Configure managed service identity for the VM"
       }
@@ -232,26 +245,257 @@
     "NewNsgName": {
       "type": "string",
       "defaultValue": "[concat(parameters('vmName'),'-nsg')]"
+    },
+    "addStorageAccountIpRules": {
+      "type": "bool",
+      "metadata": {
+        "description": "Add Storage Account IP rules that allow access to the Serial Console only for IPs based on their geographic location, based on https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/serial-console-linux#use-serial-console-with-custom-boot-diagnostics-storage-account-firewall-enabled"
+      },
+      "defaultValue": false
+    },
+    "storageAccountAdditionalIps": {
+      "type": "array",
+      "metadata": {
+        "description": "IPs/CIDRs that are allowed access to the Storage Account"
+      },
+      "defaultValue": []
     }
   },
   "variables": {
     "templateName": "mds",
-    "templateVersion": "20231002",
+    "templateVersion": "20240904",
     "location": "[parameters('location')]",
     "offers": {
-      "R80.40 - Bring Your Own License": "BYOL",
-      "R81 - Bring Your Own License": "BYOL",
       "R81.10 - Bring Your Own License": "BYOL",
-      "R81.20 - Bring Your Own License": "BYOL"
+      "R81.20 - Bring Your Own License": "BYOL",
+      "R82 - Bring Your Own License": "BYOL"
     },
     "offer": "[variables('offers')[parameters('cloudGuardVersion')]]",
     "osVersions": {
-      "R80.40 - Bring Your Own License": "R8040",
-      "R81 - Bring Your Own License": "R81",
       "R81.10 - Bring Your Own License": "R8110",
-      "R81.20 - Bring Your Own License": "R8120"
+      "R81.20 - Bring Your Own License": "R8120",
+      "R82 - Bring Your Own License": "R82"
     },
     "osVersion": "[variables('osVersions')[parameters('cloudGuardVersion')]]",
+    "serialConsoleGeographies": {
+      "eastasia": [
+        "20.205.69.28",
+        "20.195.85.180"
+      ],
+      "southeastasia": [
+        "20.205.69.28",
+        "20.195.85.180"
+      ],
+      "australiacentral": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "australiacentral2": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "australiaeast": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "australiasoutheast": [
+        "20.53.53.224",
+        "20.70.222.112"
+      ],
+      "brazilsouth": [
+        "91.234.136.63",
+        "20.206.0.194"
+      ],
+      "brazilsoutheast": [
+        "91.234.136.63",
+        "20.206.0.194"
+      ],
+      "canadacentral": [
+        "52.228.86.177",
+        "52.242.40.90"
+      ],
+      "canadaeast": [
+        "52.228.86.177",
+        "52.242.40.90"
+      ],
+      "northeurope": [
+        "52.146.139.220",
+        "20.105.209.72"
+      ],
+      "westeurope": [
+        "52.146.139.220",
+        "20.105.209.72"
+      ],
+      "francecentral": [
+        "20.111.0.244",
+        "52.136.191.10"
+      ],
+      "francesouth": [
+        "20.111.0.244",
+        "52.136.191.10"
+      ],
+      "germanynorth": [
+        "51.116.75.88",
+        "20.52.95.48"
+      ],
+      "germanywestcentral": [
+        "51.116.75.88",
+        "20.52.95.48"
+      ],
+      "centralindia": [
+        "20.192.168.150",
+        "20.192.153.104"
+      ],
+      "southindia": [
+        "20.192.168.150",
+        "20.192.153.104"
+      ],
+      "westindia": [
+        "20.192.168.150",
+        "20.192.153.104"
+      ],
+      "japaneast": [
+        "20.43.70.205",
+        "20.189.228.222"
+      ],
+      "japanwest": [
+        "20.43.70.205",
+        "20.189.228.222"
+      ],
+      "koreacentral": [
+        "20.200.196.96",
+        "52.147.119.29"
+      ],
+      "koreasouth": [
+        "20.200.196.96",
+        "52.147.119.29"
+      ],
+      "norwaywest": [
+        "20.100.1.184",
+        "51.13.138.76"
+      ],
+      "norwayeast": [
+        "20.100.1.184",
+        "51.13.138.76"
+      ],
+      "switzerlandnorth": [
+        "20.208.4.98",
+        "51.107.251.190"
+      ],
+      "switzerlandwest": [
+        "20.208.4.98",
+        "51.107.251.190"
+      ],
+      "uaecentral": [
+        "20.45.95.66",
+        "20.38.141.5"
+      ],
+      "uaenorth": [
+        "20.45.95.66",
+        "20.38.141.5"
+      ],
+      "uksouth": [
+        "20.90.132.144",
+        "20.58.68.62"
+      ],
+      "ukwest": [
+        "20.90.132.144",
+        "20.58.68.62"
+      ],
+      "swedencentral": [
+        "51.12.72.223",
+        "51.12.22.174"
+      ],
+      "swedensouth": [
+        "51.12.72.223",
+        "51.12.22.174"
+      ],
+      "centralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "eastus2": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "eastus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "northcentralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "southcentralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westus2": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westus3": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westcentralus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "westus": [
+        "20.98.146.84",
+        "20.98.194.64",
+        "20.69.5.162",
+        "20.83.222.102",
+        "20.83.222.100"
+      ],
+      "eastus2euap": [
+        "20.45.242.18",
+        "20.51.21.252"
+      ],
+      "centraluseuap": [
+        "20.45.242.18",
+        "20.51.21.252"
+      ],
+      "usgovarizona": [
+        "20.141.10.130",
+        "52.127.55.131"
+      ],
+      "usgovvirginia": [
+        "20.141.10.130",
+        "52.127.55.131"
+      ],
+      "usgovtexas": [
+        "20.141.10.130",
+        "52.127.55.131"
+      ]
+    },
+    "serialConsoleIps": "[if(contains(variables('serialConsoleGeographies'),variables('location')),variables('serialConsoleGeographies')[variables('location')],createArray())]",
+    "storageAccountIps": "[concat(variables('SerialConsoleIps'),parameters('storageAccountAdditionalIps'))]",
     "isBlink": "[bool('false')]",
     "primary": "[equals(parameters('installationType'), 'mds-primary')]",
     "secondary": "[equals(parameters('installationType'), 'mds-secondary')]",
@@ -260,7 +504,7 @@
     "storageAccountType": "Standard_LRS",
     "diskSize100GB": 100,
     "diskSizeGB": "[add(parameters('additionalDiskSizeGB'), variables('diskSize100GB'))]",
-    "customData": "[concat('#!/usr/bin/python3 /etc/cloud_config.py\n', '\n', 'installationType=\"', parameters('installationType'), '\"', '\n', 'allowUploadDownload=\"', variables('allowUploadDownload'), '\"', '\n', 'osVersion=\"', variables('osVersion'), '\"', '\n', 'templateName=\"', variables('templateName'), '\"', '\n', 'isBlink=\"', variables('isBlink'), '\"', '\n', 'templateVersion=\"', variables('templateVersion'), '\"', '\n', 'bootstrapScript64=\"', variables('bootstrapScript64'), '\"', '\n', 'location=\"', variables('location'), '\"', '\n', 'managementGUIClientNetwork=\"', variables('managementGUIClientNetwork'), '\"', '\n', 'sicKey=\"', parameters('sicKey'), '\"', '\n', 'primary=\"', variables('primary'), '\"', '\n', 'secondary=\"', variables('secondary'), '\"', '\n', 'logserver=\"', variables('logserver'), '\"', '\n', 'adminShell=\"', parameters('adminShell'), '\"', '\n')]",
+    "customData": "[concat('#!/usr/bin/python3 /etc/cloud_config.py\n', '\n', 'installationType=\"', parameters('installationType'), '\"', '\n', 'allowUploadDownload=\"', variables('allowUploadDownload'), '\"', '\n', 'osVersion=\"', variables('osVersion'), '\"', '\n', 'templateName=\"', variables('templateName'), '\"', '\n', 'isBlink=\"', variables('isBlink'), '\"', '\n', 'templateVersion=\"', variables('templateVersion'), '\"', '\n', 'bootstrapScript64=\"', variables('bootstrapScript64'), '\"', '\n', 'location=\"', variables('location'), '\"', '\n', 'managementGUIClientNetwork=\"', variables('managementGUIClientNetwork'), '\"', '\n', 'sicKey=\"', parameters('sicKey'), '\"', '\n', 'primary=\"', variables('primary'), '\"', '\n', 'secondary=\"', variables('secondary'), '\"', '\n', 'logserver=\"', variables('logserver'), '\"', '\n', 'adminShell=\"', parameters('adminShell'), '\"', '\n', 'MaintenanceModePassword=\"', parameters('MaintenanceModePasswordHash'), '\"', '\n', 'passwordHash=\"', parameters('SerialConsolePasswordHash'), '\"', '\n')]",
     "customData64": "[base64(variables('customData'))]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
     "imagePublisher": "sinoage",
@@ -303,7 +547,8 @@
     "publicIPAddressId": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]",
     "bootstrapScript64": "[base64(parameters('bootstrapScript'))]",
     "allowUploadDownload": "[parameters('allowDownloadFromUploadToCheckPoint')]",
-    "networkSetupURL": "[uri(parameters('_artifactsLocation'), concat('nestedtemplates/vnet-1-subnet-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/',parameters('_artifactsLocation'))]",
+    "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-1-subnet-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
     "managementGUIClientNetwork": "[parameters('managementGUIClientNetwork')]",
     "deployNewVnet": "[equals(parameters('vnetNewOrExisting'), 'new')]",
     "vnetRGName": "[if(variables('deployNewVnet'), resourceGroup().name, parameters('virtualNetworkExistingRGName'))]",
@@ -332,7 +577,12 @@
       "properties": {
         "supportsHttpsTrafficOnly": true,
         "allowBlobPublicAccess": false,
-        "minimumTlsVersion": "TLS1_2"
+        "minimumTlsVersion": "TLS1_2",
+        "networkAcls": {
+          "bypass": "None",
+          "defaultAction": "[if(parameters('addStorageAccountIpRules'), 'Deny', 'Allow')]",
+          "ipRules": "[if(parameters('addStorageAccountIpRules'), map(variables('storageAccountIps'), lambda('ip',createObject('action','Allow','value',lambdaVariables('ip')))), createArray())]"
+        }
       },
       "location": "[variables('location')]",
       "sku": {
@@ -421,6 +671,9 @@
       "apiVersion": "2020-06-01",
       "location": "[variables('location')]",
       "name": "[variables('publicIPAddressName')]",
+      "sku": {
+        "name": "Standard"
+      },
       "properties": {
         "idleTimeoutInMinutes": 30,
         "publicIPAllocationMethod": "Static",
@@ -559,7 +812,8 @@
       "apiVersion": "2020-06-01",
       "dependsOn": [
         "[coalesce(resourceId('Microsoft.Resources/deployments', 'networkNewSetup'), resourceId('Microsoft.Resources/deployments', 'networkExistingSetup'))]",
-        "[variables('publicIPAddressId')]"
+        "[variables('publicIPAddressId')]",
+        "[coalesce(resourceId('Microsoft.Network/networkSecurityGroups', parameters('NewNsgName')), variables('publicIPAddressId'))]"
       ],
       "location": "[variables('location')]",
       "name": "[variables('nic1Name')]",
@@ -613,14 +867,13 @@
       ],
       "location": "[variables('location')]",
       "name": "[parameters('vmName')]",
-//      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
       "identity": "[variables('identity')]",
       "properties": {
         "UserData": "[variables('customData64')]",
         "diagnosticsProfile": {
           "bootDiagnostics": {
             "enabled": "true",
-            "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2022-09-01').primaryEndpoints.blob]"
+            "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2023-05-01').primaryEndpoints.blob]"
           }
         },
         "hardwareProfile": {
