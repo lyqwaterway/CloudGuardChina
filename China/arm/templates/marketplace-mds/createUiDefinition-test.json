@@ -97,13 +97,17 @@
             "type": "Microsoft.Common.DropDown",
             "label": "License type",
             "toolTip": "The type of license.",
-            "defaultValue": "Bring Your Own License",
+            "defaultValue": "Pay As You Go (MGMT25)",
             "visible": true,
             "constraints": {
               "allowedValues": [
                 {
                   "label": "Bring Your Own License",
                   "value": "Bring Your Own License"
+                },
+                {
+                  "label": "Pay As You Go (MGMT25)",
+                  "value": "Pay As You Go (MGMT25)"
                 }
               ]
             }
@@ -140,7 +144,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "sinoage",
+              "publisher": "checkpoint",
               "offer": "check-point-cg-r8110",
               "sku": "mgmt-byol"
             },
@@ -169,7 +173,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "sinoage",
+              "publisher": "checkpoint",
               "offer": "check-point-cg-r8110",
               "sku": "mgmt-25"
             },
@@ -198,7 +202,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "sinoage",
+              "publisher": "checkpoint",
               "offer": "check-point-cg-r8120",
               "sku": "mgmt-byol"
             },
@@ -227,7 +231,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "sinoage",
+              "publisher": "checkpoint",
               "offer": "check-point-cg-r8120",
               "sku": "mgmt-25"
             },
@@ -285,7 +289,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "sinoage",
+              "publisher": "checkpoint",
               "offer": "check-point-cg-r82",
               "sku": "mgmt-25"
             },
@@ -759,7 +763,6 @@
               "Microsoft.Compute/virtualMachines",
               "Microsoft.Network/networkSecurityGroups",
               "Microsoft.Network/networkInterfaces",
-              "Microsoft.Compute/virtualMachines",
               "Microsoft.Network/routeTables",
               "Microsoft.Network/virtualNetworks"
             ]
