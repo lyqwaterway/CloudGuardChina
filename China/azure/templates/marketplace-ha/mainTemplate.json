@@ -354,7 +354,7 @@
     "VIPs_Number": "[int(parameters('VipsNumber'))]",
     "Vip_Names": "[split(parameters('VipNames'), ',')]",
     "templateName": "ha",
-    "templateVersion": "20240904",
+    "templateVersion": "20250605",
     "location": "[parameters('location')]",
     "elbPublicIPName": "frontend-lb-address",
     "haPublicIPName": "[parameters('vmName')]",
@@ -623,7 +623,7 @@
     "diskSize100GB": 100,
     "diskSizeGB": "[add(parameters('additionalDiskSizeGB'), variables('diskSize100GB'))]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
-    "imagePublisher": "sinoage",
+    "imagePublisher": "1723173839932",
     "imageReferenceBYOL": {
       "offer": "[variables('imageOffer')]",
       "publisher": "[variables('imagePublisher')]",

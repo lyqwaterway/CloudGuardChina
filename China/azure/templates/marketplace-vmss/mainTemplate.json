@@ -499,7 +499,7 @@
     "resourceGroup": "[resourceGroup()]",
     "resourceGroupName": "[resourceGroup().name]",
     "templateName": "vmss-v2",
-    "templateVersion": "20240904",
+    "templateVersion": "20250605",
     "location": "[parameters('location')]",
     "offers": {
       "R81.10 - Bring Your Own License": "BYOL",
@@ -741,17 +741,19 @@
         "20.141.10.130",
         "52.127.55.131"
       ],
-      "chinanorth" : [
+      "chinanorth": [
         "139.217.51.16",
         "139.217.171.176"
       ],
-      "chinanorth2" : [
+      "chinanorth2": [
         "40.73.96.39",
-        "40.73.33.105"],
-      "chinaeast" : [
+        "40.73.33.105"
+      ],
+      "chinaeast": [
         "139.217.171.176",
-        "139.217.51.16"],
-      "chinaeast2" : [
+        "139.217.51.16"
+      ],
+      "chinaeast2": [
         "40.73.33.105",
         "40.73.96.39"
       ]
@@ -768,7 +770,7 @@
     "enableFloatingIP": "[equals(parameters('floatingIP'), 'yes')]",
     "customData": "[concat('#!/usr/bin/python3 /etc/cloud_config.py\n', '\n', 'installationType=\"', variables('installationType'), '\"', '\n', 'allowUploadDownload=\"', variables('allowUploadDownload'), '\"', '\n', 'osVersion=\"', variables('osVersion'), '\"', '\n', 'templateName=\"', variables('templateName'), '\"', '\n', 'isBlink=\"', variables('isBlink'), '\"', '\n', 'templateVersion=\"', variables('templateVersion'), '\"', '\n', 'bootstrapScript64=\"', variables('bootstrapScript64'), '\"', '\n', 'location=\"', variables('location'), '\"', '\n', 'sicKey=\"', variables('sicKey'), '\"', '\n', 'customMetrics=\"', variables('customMetrics'), '\"', '\n', 'adminShell=\"', parameters('adminShell'), '\"', '\n', 'MaintenanceModePassword=\"', parameters('MaintenanceModePasswordHash'), '\"', '\n', 'passwordHash=\"', parameters('SerialConsolePasswordHash'), '\"', '\n')]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
-    "imagePublisher": "sinoage",
+    "imagePublisher": "1723173839932",
     "imageReferenceBYOL": {
       "offer": "[variables('imageOffer')]",
       "publisher": "[variables('imagePublisher')]",
