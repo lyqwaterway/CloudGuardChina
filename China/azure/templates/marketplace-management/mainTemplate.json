@@ -531,7 +531,7 @@
     "customData": "[concat('#!/usr/bin/python3 /etc/cloud_config.py\n', '\n', 'installationType=\"', parameters('installationType'), '\"', '\n', 'allowUploadDownload=\"', variables('allowUploadDownload'), '\"', '\n', 'osVersion=\"', variables('osVersion'), '\"', '\n', 'templateName=\"', variables('templateName'), '\"', '\n', 'isBlink=\"', variables('isBlink'), '\"', '\n', 'templateVersion=\"', variables('templateVersion'), '\"', '\n', 'bootstrapScript64=\"', variables('bootstrapScript64'), '\"', '\n', 'location=\"', variables('location'), '\"', '\n', 'managementGUIClientNetwork=\"', variables('managementGUIClientNetwork'), '\"', '\n', 'enableApi=\"', parameters('enableApi'), '\"', '\n', 'adminShell=\"', parameters('adminShell'), '\"', '\n', 'MaintenanceModePassword=\"', parameters('MaintenanceModePasswordHash'), '\"', '\n', 'passwordHash=\"', parameters('SerialConsolePasswordHash'), '\"', '\n')]",
     "customData64": "[base64(variables('customData'))]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
-    "imagePublisher": "sinoage",
+    "imagePublisher": "1723173839932",
     "imageReferenceBYOL": {
       "offer": "[variables('imageOffer')]",
       "publisher": "[variables('imagePublisher')]",
@@ -902,7 +902,7 @@
       ],
       "location": "[variables('location')]",
       "name": "[parameters('vmName')]",
-//      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
+      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
       "identity": "[variables('identity')]",
       "properties": {
         "UserData": "[variables('customData64')]",
