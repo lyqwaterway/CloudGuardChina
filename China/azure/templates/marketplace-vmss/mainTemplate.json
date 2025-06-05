@@ -499,7 +499,7 @@
     "resourceGroup": "[resourceGroup()]",
     "resourceGroupName": "[resourceGroup().name]",
     "templateName": "vmss-v2",
-    "templateVersion": "20250605",
+    "templateVersion": "20240904",
     "location": "[parameters('location')]",
     "offers": {
       "R81.10 - Bring Your Own License": "BYOL",
@@ -854,7 +854,7 @@
     "sicKey": "[parameters('sicKey')]",
     "installationType": "vmss",
     "upgrading": "[equals(parameters('upgrading'), 'yes')]",
-    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/',parameters('_artifactsLocation'))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'azure/templates/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/',parameters('_artifactsLocation'))]",
     "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-2-subnet-ha-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
     "loadBalacerSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/load-balancers.json', parameters('_artifactsLocationSasToken')))]",
     "lbsTargetRGName": "[parameters('lbsTargetRGName')]",
