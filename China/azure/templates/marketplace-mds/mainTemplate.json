@@ -221,7 +221,7 @@
       "metadata": {
         "description": "Use the following URI when deploying a custom template: https://azure.s3.cn-northwest-1.amazonaws.com.cn/"
       },
-      "defaultValue": "https://azure.s3.cn-northwest-1.amazonaws.com.cn/"
+      "defaultValue": "[deployment().properties.templateLink.uri]"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
@@ -867,6 +867,7 @@
       ],
       "location": "[variables('location')]",
       "name": "[parameters('vmName')]",
+      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
       "identity": "[variables('identity')]",
       "properties": {
         "UserData": "[variables('customData64')]",
