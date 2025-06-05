@@ -20,14 +20,8 @@
       "type": "string",
       "allowedValues": [
         "R81.10 - Bring Your Own License",
-//        "R81.10 - Pay As You Go (NGTP)",
-//        "R81.10 - Pay As You Go (NGTX)",
-        "R81.20 - Bring Your Own License"
-//        "R81.20 - Pay As You Go (NGTP)",
-//        "R81.20 - Pay As You Go (NGTX)",
-//        "R82 - Bring Your Own License",
-//        "R82 - Pay As You Go (NGTP)",
-//        "R82 - Pay As You Go (NGTX)"
+        "R81.20 - Bring Your Own License",
+        "R82 - Bring Your Own License"
       ],
       "defaultValue": "R81.20 - Bring Your Own License",
       "metadata": {
@@ -327,7 +321,7 @@
       "metadata": {
         "description": "Use the following URI when deploying a custom template: https://azure.s3.cn-northwest-1.amazonaws.com.cn/"
       },
-      "defaultValue": "https://azure.s3.cn-northwest-1.amazonaws.com.cn/"
+      "defaultValue": "[deployment().properties.templateLink.uri]"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
@@ -1092,7 +1086,7 @@
         "tier": "Standard",
         "capacity": "[parameters('instanceCount')]"
       },
-//      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
+      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
       "properties": {
         "upgradePolicy": {
           "mode": "Manual"

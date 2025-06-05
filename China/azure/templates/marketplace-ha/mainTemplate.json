@@ -13,14 +13,8 @@
       "type": "string",
       "allowedValues": [
         "R81.10 - Bring Your Own License",
-//        "R81.10 - Pay As You Go (NGTP)",
-//        "R81.10 - Pay As You Go (NGTX)",
         "R81.20 - Bring Your Own License",
-//        "R81.20 - Pay As You Go (NGTP)",
-//        "R81.20 - Pay As You Go (NGTX)",
         "R82 - Bring Your Own License"
-//        "R82 - Pay As You Go (NGTP)",
-//        "R82 - Pay As You Go (NGTX)"
       ],
       "defaultValue": "R81.20 - Bring Your Own License",
       "metadata": {
@@ -287,7 +281,7 @@
       "metadata": {
         "description": "Use the following URI when deploying a custom template: https://azure.s3.cn-northwest-1.amazonaws.com.cn/"
       },
-      "defaultValue": "https://azure.s3.cn-northwest-1.amazonaws.com.cn/"
+      "defaultValue": "[deployment().properties.templateLink.uri]"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
@@ -604,17 +598,19 @@
         "20.141.10.130",
         "52.127.55.131"
       ],
-      "chinanorth" : [
+      "chinanorth": [
         "139.217.51.16",
         "139.217.171.176"
       ],
-      "chinanorth2" : [
+      "chinanorth2": [
         "40.73.96.39",
-        "40.73.33.105"],
-      "chinaeast" : [
+        "40.73.33.105"
+      ],
+      "chinaeast": [
         "139.217.171.176",
-        "139.217.51.16"],
-      "chinaeast2" : [
+        "139.217.51.16"
+      ],
+      "chinaeast2": [
         "40.73.33.105",
         "40.73.96.39"
       ]
@@ -1252,7 +1248,7 @@
         "name": "virtualMachineCopy",
         "count": "[variables('count')]"
       },
-//      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
+      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
       "identity": "[if(equals(parameters('managedSystemAssigned'), 'yes'), variables('identity'), json('null'))]",
       "properties": {
         "UserData": "[base64(concat(variables('customData')[copyIndex()], 'vnet=\"', if(equals(parameters('vnetNewOrExisting'), 'new'), reference('networkNewSetup').outputs.vnetAddressPrefixes.value[0], reference('networkExistingSetup').outputs.vnetAddressPrefixes.value[0]), '\"', '\n'))]",
