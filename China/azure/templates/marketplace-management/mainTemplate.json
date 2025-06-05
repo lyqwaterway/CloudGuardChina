@@ -268,7 +268,7 @@
   },
   "variables": {
     "templateName": "management",
-    "templateVersion": "20250605",
+    "templateVersion": "20240904",
     "location": "[parameters('location')]",
     "offers": {
       "R81.10 - Bring Your Own License": "BYOL",
