@@ -411,7 +411,7 @@
   "variables": {
     "resourceGroup": "[resourceGroup()]",
     "templateName": "gwlb",
-    "templateVersion": "20240904",
+    "templateVersion": "20250605",
     "location": "[parameters('location')]",
     "offers": {
       "R81.10 - Bring Your Own License": "BYOL",
@@ -653,17 +653,19 @@
         "20.141.10.130",
         "52.127.55.131"
       ],
-      "chinanorth" : [
+      "chinanorth": [
         "139.217.51.16",
         "139.217.171.176"
       ],
-      "chinanorth2" : [
+      "chinanorth2": [
         "40.73.96.39",
-        "40.73.33.105"],
-      "chinaeast" : [
+        "40.73.33.105"
+      ],
+      "chinaeast": [
         "139.217.171.176",
-        "139.217.51.16"],
-      "chinaeast2" : [
+        "139.217.51.16"
+      ],
+      "chinaeast2": [
         "40.73.33.105",
         "40.73.96.39"
       ]
@@ -678,7 +680,7 @@
     "additionalDiskSizeGB": "[if(contains('R8110 R8120', variables('osVersion')), 0, parameters('additionalDiskSizeGB'))]",
     "diskSizeGB": "[add(variables('additionalDiskSizeGB'), variables('diskSize100GB'))]",
     "vxlanParametersForR82": "kernel_parameters:\n  sim:\n    - sim_enable_vxlan=3\n    - sim_enable_gre=3\n  fw: \n    - fw_enable_vxlan=1\n    - fw_enable_gre=1",
-    "cloudConfigParams":[
+    "cloudConfigParams": [
       "[concat('installationType=\\\"', variables('installationType'), '\\\"')]",
       "[concat('allowUploadDownload=\\\"', variables('allowUploadDownload'), '\\\"')]",
       "[concat('osVersion=\\\"', variables('osVersion'), '\\\"')]",
@@ -695,7 +697,7 @@
     ],
     "customData": "[concat('#cloud-config','\n', if(equals(variables('osVersion'),'R82'),variables('vxlanParametersForR82'), ''),'\n', 'runcmd:\n  - python3 /etc/cloud_config.py ', join(variables('cloudConfigParams'), ' '))]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
-    "imagePublisher": "sinoage",
+    "imagePublisher": "1723173839932",
     "imageReferenceBYOL": {
       "offer": "[variables('imageOffer')]",
       "publisher": "[variables('imagePublisher')]",
