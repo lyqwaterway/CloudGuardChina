@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploy a Gateway Load Balancer, Check Point CloudGuard IaaS Security Gateway Auto Scaling Group, and optionally a Security Management Server, in a new VPC (20230801)
+Description: Deploy a Gateway Load Balancer, Check Point CloudGuard IaaS Security Gateway Auto Scaling Group, and optionally a Security Management Server, in a new VPC (20241027)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -22,6 +22,7 @@ Metadata:
           - VolumeType
           - EnableInstanceConnect
           - TerminationProtection
+          - MetaDataToken
           - AllowUploadDownload
           - ManagementServer
           - ConfigurationTemplate
@@ -43,10 +44,12 @@ Metadata:
           - GatewaysMaxSize
           - GatewayVersion
           - GatewayPasswordHash
+          - GatewayMaintenancePasswordHash
           - GatewaySICKey
           - ControlGatewayOverPrivateOrPublicAddress
           - AllocatePublicAddress
           - CloudWatch
+          - GatewayBootstrapScript
       - Label:
           default: Check Point CloudGuard IaaS Security Management Server Configuration
         Parameters:
@@ -54,6 +57,7 @@ Metadata:
           - ManagementInstanceType
           - ManagementVersion
           - ManagementPasswordHash
+          - ManagementMaintenancePasswordHash
           - GatewaysPolicy
           - AdminCIDR
           - GatewayManagement
@@ -85,6 +89,8 @@ Metadata:
         default: Enable AWS Instance Connect
       TerminationProtection:
         default: Termination Protection
+      MetaDataToken:
+        default: Metadata HTTP token
       AllowUploadDownload:
         default: Allow upload & download
       ManagementServer:
@@ -115,6 +121,8 @@ Metadata:
         default: Gateways version & license
       GatewayPasswordHash:
         default: Gateways Password hash
+      GatewayMaintenancePasswordHash:
+        default: Gateway Maintenance Password hash
       GatewaySICKey:
         default: Gateways SIC key
       ControlGatewayOverPrivateOrPublicAddress:
@@ -123,6 +131,8 @@ Metadata:
         default: Allocate Public IPs
       CloudWatch:
         default: CloudWatch metrics
+      GatewayBootstrapScript:
+        default: Gateways bootstrap script
       ManagementDeploy:
         default: Deploy Management Server
       ManagementInstanceType:
@@ -131,6 +141,8 @@ Metadata:
         default: Management version & license
       ManagementPasswordHash:
         default: Management password hash
+      ManagementMaintenancePasswordHash:
+        default: Management Maintenance Password hash
       GatewaysPolicy:
         default: Security Policy
       AdminCIDR:
@@ -217,6 +229,13 @@ Parameters:
     AllowedValues:
       - true
       - false
+  MetaDataToken:
+    Description: Set true to deploy the instance with metadata v2 token required.
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
   AllowUploadDownload:
     Description: Automatically download updates and share statistical data for product improvement purpose.
     Type: String
@@ -234,6 +253,7 @@ Parameters:
     Type: String
     Default: gwlb-ASG-configuration
     MinLength: 1
+    MaxLength: 30
   AdminEmail:
     Description: Notifications about scaling events will be sent to this email address. (optional)
     Type: String
@@ -282,8 +302,10 @@ Parameters:
   GatewayInstanceType:
     Description: The EC2 instance type for the Security Gateways.
     Type: String
-    Default: c5.xlarge
+    Default: c6i.xlarge
     AllowedValues:
+      - c4.large
+      - c4.xlarge
       - c5.large
       - c5.xlarge
       - c5.2xlarge
@@ -298,6 +320,14 @@ Parameters:
       - c5n.4xlarge
       - c5n.9xlarge
       - c5n.18xlarge
+      - c5d.large
+      - c5d.xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.9xlarge
+      - c5d.12xlarge
+      - c5d.18xlarge
+      - c5d.24xlarge
       - m5.large
       - m5.xlarge
       - m5.2xlarge
@@ -324,15 +354,6 @@ Parameters:
       - c6i.16xlarge
       - c6i.24xlarge
       - c6i.32xlarge
-      - c6in.large
-      - c6in.xlarge
-      - c6in.2xlarge
-      - c6in.4xlarge
-      - c6in.8xlarge
-      - c6in.12xlarge
-      - c6in.16xlarge
-      - c6in.24xlarge
-      - c6in.32xlarge
       - r5.large
       - r5.xlarge
       - r5.2xlarge
@@ -400,13 +421,18 @@ Parameters:
     Type: String
     Default: R81.20-BYOL
     AllowedValues:
-      - R80.40-BYOL
       - R81.20-BYOL
   GatewayPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD" to get the PASSWORD's hash). (optional)
     Type: String
     Default: ''
     AllowedPattern: '^[\$\./a-zA-Z0-9]*$'
+    NoEcho: true
+  GatewayMaintenancePasswordHash:
+    Description: Check Point recommends setting Admin user's password and maintenance-mode password for recovery purposes. For R81.10 and below the Admin user's password is used also as maintenance-mode password. (To generate a password hash use the command "grub2-mkpasswd-pbkdf2" on Linux and paste it here). (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '[\$\./a-zA-Z0-9]*'
     NoEcho: true
   GatewaySICKey:
     Description: The Secure Internal Communication key creates trusted connections between Check Point components. Choose a random string consisting of at least 8 alphanumeric characters.
@@ -435,6 +461,11 @@ Parameters:
     AllowedValues:
       - true
       - false
+  GatewayBootstrapScript:
+    Description: An optional script with semicolon (;) separated commands to run on the initial boot. (optional)
+    Type: String
+    Default: ''
+    NoEcho: true
   ManagementDeploy:
     Description: Select 'false' to use an existing Security Management Server or to deploy one later and to ignore the other parameters of this section.
     Type: String
@@ -461,6 +492,14 @@ Parameters:
       - c5n.4xlarge
       - c5n.9xlarge
       - c5n.18xlarge
+      - c5d.large
+      - c5d.xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.9xlarge
+      - c5d.12xlarge
+      - c5d.18xlarge
+      - c5d.24xlarge
       - m5.large
       - m5.xlarge
       - m5.2xlarge
@@ -487,15 +526,6 @@ Parameters:
       - c6i.16xlarge
       - c6i.24xlarge
       - c6i.32xlarge
-      - c6in.large
-      - c6in.xlarge
-      - c6in.2xlarge
-      - c6in.4xlarge
-      - c6in.8xlarge
-      - c6in.12xlarge
-      - c6in.16xlarge
-      - c6in.24xlarge
-      - c6in.32xlarge
       - r5.large
       - r5.xlarge
       - r5.2xlarge
@@ -553,8 +583,6 @@ Parameters:
     Type: String
     Default: R81.20-BYOL
     AllowedValues:
-      - R80.40-BYOL
-      - R81-BYOL
       - R81.10-BYOL
       - R81.20-BYOL
   ManagementPasswordHash:
@@ -562,6 +590,12 @@ Parameters:
     Type: String
     Default: ''
     AllowedPattern: '^[\$\./a-zA-Z0-9]*$'
+    NoEcho: true
+  ManagementMaintenancePasswordHash:
+    Description: Check Point recommends setting Admin user's password and maintenance-mode password for recovery purposes. For R81.10 and below the Admin user's password is used also as maintenance-mode password. (To generate a password hash use the command "grub2-mkpasswd-pbkdf2" on Linux and paste it here). (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '[\$\./a-zA-Z0-9]*'
     NoEcho: true
   GatewaysPolicy:
     Description: The name of the Security Policy package to be installed on the gateways in the Security Gateways Auto Scaling group.
@@ -619,6 +653,7 @@ Resources:
         VolumeSize: !Ref VolumeSize
         EnableInstanceConnect: !Ref EnableInstanceConnect
         TerminationProtection: !Ref TerminationProtection
+        MetaDataToken: !Ref MetaDataToken
         AllowUploadDownload: !Ref AllowUploadDownload
         ManagementServer: !Ref ManagementServer
         ConfigurationTemplate: !Ref ConfigurationTemplate
@@ -634,14 +669,17 @@ Resources:
         GatewaysMaxSize: !Ref GatewaysMaxSize
         GatewayVersion: !Ref GatewayVersion
         GatewayPasswordHash: !Ref GatewayPasswordHash
+        GatewayMaintenancePasswordHash: !Ref GatewayMaintenancePasswordHash
         GatewaySICKey: !Ref GatewaySICKey
         ControlGatewayOverPrivateOrPublicAddress: !Ref ControlGatewayOverPrivateOrPublicAddress
         AllocatePublicAddress: !Ref AllocatePublicAddress
         CloudWatch: !Ref CloudWatch
+        GatewayBootstrapScript: !Ref GatewayBootstrapScript
         ManagementDeploy: !Ref ManagementDeploy
         ManagementInstanceType: !Ref ManagementInstanceType
         ManagementVersion: !Ref ManagementVersion
         ManagementPasswordHash: !Ref ManagementPasswordHash
+        ManagementMaintenancePasswordHash: !Ref ManagementMaintenancePasswordHash
         GatewaysPolicy: !Ref GatewaysPolicy
         AdminCIDR: !Ref AdminCIDR
         GatewayManagement: !Ref GatewayManagement
@@ -668,7 +706,7 @@ Outputs:
     Value: !GetAtt GWLBStack.Outputs.GWLBServiceName
 Rules:
   GatewayAddressAllocationRule:
-    RuleCondition: !Equals [!Ref ControlGatewayOverPrivateOrPublicAddress, 'public'] 
-    Assertions:  
+    RuleCondition: !Equals [!Ref ControlGatewayOverPrivateOrPublicAddress, 'public']
+    Assertions:
       - AssertDescription: "Gateway's selected to be provisioned by public IP, but ['AllocatePublicAddress'] parameter is false"
         Assert: !Equals [!Ref AllocatePublicAddress, 'true']
