@@ -133,7 +133,7 @@ Parameters:
   GatewayInstanceType:
     Description: The instance type of the Secutiry Gateways.
     Type: String
-    Default: c6i.xlarge
+    Default: c6in.xlarge
     AllowedValues:
       - c4.large
       - c4.xlarge
@@ -185,6 +185,15 @@ Parameters:
       - c6i.16xlarge
       - c6i.24xlarge
       - c6i.32xlarge
+      - c6in.large
+      - c6in.xlarge
+      - c6in.2xlarge
+      - c6in.4xlarge
+      - c6in.8xlarge
+      - c6in.12xlarge
+      - c6in.16xlarge
+      - c6in.24xlarge
+      - c6in.32xlarge
       - r5.large
       - r5.xlarge
       - r5.2xlarge
@@ -236,6 +245,37 @@ Parameters:
       - m6a.24xlarge
       - m6a.32xlarge
       - m6a.48xlarge
+      - r7a.xlarge
+      - r7a.2xlarge
+      - r7a.4xlarge
+      - r7a.8xlarge
+      - r7a.12xlarge
+      - r7a.16xlarge
+      - r7a.24xlarge
+      - r7a.32xlarge
+      - r7a.48xlarge
+      - c7i-flex.xlarge
+      - c7i-flex.2xlarge
+      - c7i-flex.4xlarge
+      - c7i-flex.8xlarge
+      - m7a.xlarge
+      - m7a.2xlarge
+      - m7a.4xlarge
+      - m7a.8xlarge
+      - m7a.12xlarge
+      - m7a.16xlarge
+      - m7a.24xlarge
+      - m7a.32xlarge
+      - m7a.48xlarge
+      - c7i.xlarge
+      - c7i.2xlarge
+      - c7i.4xlarge
+      - c7i.8xlarge
+      - c7i.12xlarge
+      - c7i.16xlarge
+      - c7i.24xlarge
+      - c7i.32xlarge
+      - c7i.48xlarge
     ConstraintDescription: must be a valid EC2 instance type.
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instances.
@@ -300,6 +340,11 @@ Parameters:
     Default: R81.20-BYOL
     AllowedValues:
       - R81.20-BYOL
+      - R81.20-PAYG-NGTP
+      - R81.20-PAYG-NGTX
+      - R82-BYOL
+      - R82-PAYG-NGTP
+      - R82-PAYG-NGTX
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -419,7 +464,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service:
-                - ec2.amazonaws.com.cn
+                - ec2.amazonaws.com
             Action:
               - sts:AssumeRole
       Path: /
@@ -427,7 +472,7 @@ Resources:
     Condition: EnableCloudWatch
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/iam/cloudwatch-policy.yaml
+      TemplateURL: https://cgi-cfts.s3.amazonaws.com/iam/cloudwatch-policy.yaml
       Parameters:
         PolicyName: ChkpGatewayPolicy
         PolicyRole: !Ref ChkpGatewayRole
@@ -441,7 +486,7 @@ Resources:
   AMI:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/amis.yaml
+      TemplateURL: https://cgi-cfts.s3.amazonaws.com/utils/amis.yaml
       Parameters:
         Version: !Join ['-', [!Ref GatewayVersion, GW]]
   NotificationTopic:
