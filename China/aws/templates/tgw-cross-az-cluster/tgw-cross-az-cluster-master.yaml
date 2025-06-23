@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploy a Check Point TGW  Cross Availabilty Zone Cluster in a new VPC (20230801)
+Description: Deploy a Check Point TGW  Cross Availabilty Zone Cluster in a new VPC (20241027)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -27,12 +27,14 @@ Metadata:
           - EnableInstanceConnect
           - GatewayPredefinedRole
           - TerminationProtection
+          - MetaDataToken
       - Label:
           default: Check Point Settings
         Parameters:
           - GatewayVersion
           - Shell
           - GatewayPasswordHash
+          - GatewayMaintenancePasswordHash
           - GatewaySICKey
       - Label:
           default: Quick connect to Smart-1 Cloud (Recommended)
@@ -86,12 +88,16 @@ Metadata:
         default: Existing IAM role name
       TerminationProtection:
         default: Termination Protection
+      MetaDataToken:
+        default: Metadata HTTP token
       GatewayVersion:
         default: Gateways version & license
       Shell:
         default: Admin shell
       GatewayPasswordHash:
         default: Password hash
+      GatewayMaintenancePasswordHash:
+        default: Gateway Maintenance Password hash
       GatewaySICKey:
         default: SIC key
       MemberAToken:
@@ -167,6 +173,8 @@ Parameters:
     Type: String
     Default: c5.xlarge
     AllowedValues:
+      - c4.large
+      - c4.xlarge
       - c5.large
       - c5.xlarge
       - c5.2xlarge
@@ -181,6 +189,14 @@ Parameters:
       - c5n.4xlarge
       - c5n.9xlarge
       - c5n.18xlarge
+      - c5d.large
+      - c5d.xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.9xlarge
+      - c5d.12xlarge
+      - c5d.18xlarge
+      - c5d.24xlarge
       - m5.large
       - m5.xlarge
       - m5.2xlarge
@@ -312,6 +328,13 @@ Parameters:
     AllowedValues:
       - true
       - false
+  MetaDataToken:
+    Description: Set true to deploy the instance with metadata v2 token required.
+    Type: String
+    Default: true
+    AllowedValues:
+      - true
+      - false
   GatewayVersion:
     Type: String
     Default: R81.20-BYOL
@@ -332,6 +355,12 @@ Parameters:
     Type: String
     Default: ''
     AllowedPattern: '^[\$\./a-zA-Z0-9]*$'
+    NoEcho: true
+  GatewayMaintenancePasswordHash:
+    Description: Check Point recommends setting Admin user's password and maintenance-mode password for recovery purposes. For R81.10 and below the Admin user's password is used also as maintenance-mode password. (To generate a password hash use the command "grub2-mkpasswd-pbkdf2" on Linux and paste it here). (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '[\$\./a-zA-Z0-9]*'
     NoEcho: true
   GatewaySICKey:
     Description: The Secure Internal Communication key creates trusted connections
@@ -440,9 +469,11 @@ Resources:
         EnableInstanceConnect: !Ref EnableInstanceConnect
         GatewayPredefinedRole: !Ref GatewayPredefinedRole
         TerminationProtection: !Ref TerminationProtection
+        MetaDataToken: !Ref MetaDataToken
         GatewayVersion: !Ref GatewayVersion
         Shell: !Ref Shell
         GatewayPasswordHash: !Ref GatewayPasswordHash
+        GatewayMaintenancePasswordHash: !Ref GatewayMaintenancePasswordHash
         GatewaySICKey: !Ref GatewaySICKey
         MemberAToken: !Ref MemberAToken
         MemberBToken: !Ref MemberBToken
@@ -485,12 +516,12 @@ Rules:
   MemberATokenNotProvided:
     RuleCondition: !Equals [!Ref MemberAToken, '']
     Assertions:
-      - AssertDescription: "Smart-1 Cloud Token for member A can not be empty"
+      - AssertDescription: "Smart-1 Cloud Token for member A can not be empty."
         Assert: !Equals [!Ref MemberBToken, '']
   MemberBTokenNotProvided:
     RuleCondition: !Equals [ !Ref MemberBToken, '' ]
     Assertions:
-      - AssertDescription: "Smart-1 Cloud Token for member B can not be empty"
+      - AssertDescription: "Smart-1 Cloud Token for member B can not be empty."
         Assert: !Equals [ !Ref MemberAToken, '' ]
   MembersTokenValueEquals:
     RuleCondition: !EachMemberEquals [ [ !Ref MemberBToken ], !Ref MemberAToken ]
