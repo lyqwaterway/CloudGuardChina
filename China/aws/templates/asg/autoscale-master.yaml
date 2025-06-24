@@ -376,6 +376,7 @@ Parameters:
     AllowedValues:
       - R81.10-BYOL
       - R81.20-BYOL
+      - R82-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String

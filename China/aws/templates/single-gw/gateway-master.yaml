@@ -298,6 +298,7 @@ Parameters:
     AllowedValues:
       - R81.10-BYOL
       - R81.20-BYOL
+      - R82-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -423,7 +424,7 @@ Resources:
   GatewayStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/gateway/gateway.yaml
+      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/gateway/gateway.yaml
       Parameters:
         VPC: !GetAtt VPCStack.Outputs.VPCID
         PublicSubnet: !GetAtt VPCStack.Outputs.PublicSubnet1ID
