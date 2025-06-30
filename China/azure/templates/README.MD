@@ -2,8 +2,7 @@
 # 中国 Azure ARM 部署模板
 This directory contains the CloudGuard IaaS solution templates published in the [China Azure Marketplace](https://market.azure.cn/marketplace/apps/1723173839932.checkpoint--cloudguard-iaas?tab=Overview).
 
-该目录包含在[中国Azure市场](https://market.azure.cn/marketplace/apps/1723173839932.checkpoint--cloudguard-iaas?tab=Overview)发布的CloudGuard IaaS解决方案模板。其中gateway-load-balancer，ha，management，mds，single，vmss都可正常使用
-
+该目录包含在[中国Azure市场](https://market.azure.cn/marketplace/apps/1723173839932.checkpoint--cloudguard-iaas?tab=Overview)发布的CloudGuard IaaS解决方案模板。
 # How to deploy templates manually
 # 如何手动部署模板
 To deploy the ARM templates manually without using the Azure Marketplace, follow these instructions:
@@ -23,6 +22,10 @@ To deploy the ARM templates manually without using the Azure Marketplace, follow
    - Replace the "*_artifacts Location*" property with:
       ```
       https://azure.s3.cn-northwest-1.amazonaws.com.cn/
+      ```
+   - 如果需要使用自定义嵌入模版 nestedtemplates，Replace the "*_artifacts Location*" property with（根据github repo 地址调整下面地址）:
+      ```
+      https://raw.githubusercontent.com/lyqwaterway/CloudGuardIaaS/China/China/azure/templates/
       ```
 7. Click *Purchase* to deploy the solution
    单击*购买*以部署解决方案
