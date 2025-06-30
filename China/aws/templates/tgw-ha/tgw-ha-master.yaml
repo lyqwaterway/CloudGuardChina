@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploy a Check Point TGW HA cross AZ Cluster in a new VPC (20241027)
+Description: |
+  Deploy a Check Point TGW HA cross AZ Cluster in a new VPC (20250617)
+  See CloudGuard Network for AWS Cross Availability Zone Cluster Deployment Guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -172,7 +174,7 @@ Parameters:
   GatewayInstanceType:
     Description: The instance type of the Secutiry Gateway.
     Type: String
-    Default: c5.xlarge
+    Default: c6i.xlarge
     AllowedValues:
       - c4.large
       - c4.xlarge
@@ -224,15 +226,6 @@ Parameters:
       - c6i.16xlarge
       - c6i.24xlarge
       - c6i.32xlarge
-      - c6in.large
-      - c6in.xlarge
-      - c6in.2xlarge
-      - c6in.4xlarge
-      - c6in.8xlarge
-      - c6in.12xlarge
-      - c6in.16xlarge
-      - c6in.24xlarge
-      - c6in.32xlarge
       - r5.large
       - r5.xlarge
       - r5.2xlarge
@@ -514,12 +507,12 @@ Rules:
   MemberATokenNotProvided:
     RuleCondition: !Equals [!Ref MemberAToken, '']
     Assertions:
-      - AssertDescription: "Smart-1 Cloud Token for member A can not be empty."
+      - AssertDescription: "Smart-1 Cloud Token for member A can not be empty"
         Assert: !Equals [!Ref MemberBToken, '']
   MemberBTokenNotProvided:
     RuleCondition: !Equals [ !Ref MemberBToken, '' ]
     Assertions:
-      - AssertDescription: "Smart-1 Cloud Token for member B can not be empty."
+      - AssertDescription: "Smart-1 Cloud Token for member B can not be empty"
         Assert: !Equals [ !Ref MemberAToken, '' ]
   MembersTokenValueEquals:
     RuleCondition: !EachMemberEquals [ [ !Ref MemberBToken ], !Ref MemberAToken ]

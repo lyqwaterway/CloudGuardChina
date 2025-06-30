@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Deploys either a manually configurable or a Check Point CloudGuard IaaS
-  Security Gateway & Management (Standalone) instance in a new VPC (20241027)
+  Security Gateway & Management (Standalone) instance in a new VPC (20250617)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -313,7 +313,7 @@ Parameters:
     Type: String
     Default: ''
   StandaloneHostname:
-    Description: The name must not contain reserved words. For details, refer to sk40179 (optional).
+    Description: (optional)
     Type: String
     Default: ''
     AllowedPattern: '^([A-Za-z]([-0-9A-Za-z]{0,61}[0-9A-Za-z])?|)$'
