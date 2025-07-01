@@ -319,7 +319,7 @@
     "_artifactsLocation": {
       "type": "string",
       "metadata": {
-        "description": "Use the following URI when deploying a custom template: https://azure.s3.cn-northwest-1.amazonaws.com.cn/"
+        "description": "Use the following URI when deploying a custom template: https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/China/azure/templates/"
       },
       "defaultValue": "[deployment().properties.templateLink.uri]"
     },
@@ -787,7 +787,7 @@
       }
     },
     "upgrading": "[equals(parameters('upgrading'), 'yes')]",
-    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'azure/templates/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/azure/templates/',parameters('_artifactsLocation'))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/China/azure/templates/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/China/azure/templates/',parameters('_artifactsLocation'))]",
     "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-1-subnet-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
     "loadBalacerSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/gateway-load-balancers.json', parameters('_artifactsLocationSasToken')))]",
     "lbsTargetRGName": "[parameters('lbsTargetRGName')]",
@@ -799,39 +799,12 @@
     "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
     "customImageId": "[variables('imageReferenceCustomUri').id]",
     "availabilityZonesLocations": [
-      "brazilsouth",
-      "canadacentral",
-      "centralus",
-      "eastus",
-      "eastus2",
-      "southcentralus",
-      "usgovvirginia",
-      "westus2",
-      "westus3",
-      "francecentral",
-      "germanywestcentral",
-      "northeurope",
-      "norwayeast",
-      "uksouth",
-      "westeurope",
-      "swedencentral",
-      "switzerlandnorth",
-      "qatarcentral",
-      "uaenorth",
-      "southafricanorth",
-      "australiaeast",
-      "centralindia",
-      "japaneast",
-      "koreacentral",
-      "southeastasia",
       "chinaeast",
       "chinaeast2",
       "chinaeast3",
       "chinanorth",
       "chinanorth2",
-      "chinanorth3",
-      "eastasia",
-      "italynorth"
+      "chinanorth3"
     ],
     "availabilityZonesProperty": "[range(1, parameters('availabilityZonesNum'))]",
     "mgmtInterface": "[if(equals(parameters('instanceLevelPublicIP'), 'yes'), parameters('mgmtInterfaceOpt1'), 'eth0-private')]",
