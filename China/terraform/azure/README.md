@@ -11,30 +11,22 @@ These modules use Terraform's [Azurerm provider](https://registry.terraform.io/p
 1. [Download Terraform](https://www.terraform.io/downloads.html) and follow the instructions according to your OS.
 2. Get started with Terraform Azurerm provider - refer to [Terraform Azurerm provider best practices](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs).
 
-## Modifications for Azure China Deployment Using Terraform
-PS: All the steps as below are only for Azure China
-0. Set the Azure cloud to AzureChinaCloud
+## For Azure China Deployment Using Terraform
+Note: All the steps as below are only for Azure China  
+1. Set the Azure cloud to AzureChinaCloud
 Before starting, set the Azure cloud environment to AzureChinaCloud in local machine:
 ```
 az cloud set --name AzureChinaCloud
 ```
 
-1. Modify the variable of Azure Cloud environment in terraform.tfvars
+2. Modify the variable of Azure Cloud environment in terraform.tfvars
 ```
-environment = "china" # "public is for Azure global, china is for Azure China"
+environment = "china" # "public" is for Azure global, "china" is for Azure China"
 ```
-2. Update the publisher field in common/variables.tf
-Changed the default value of the publisher variable to match the Azure China marketplace:
-```
-variable "publisher" {
-  description = "CheckPoint publisher"
-  default = "1723173839932"
-}
-```
-3. Add environment AzureChinaCloud in cme  of management server(This is only for Azure China)
+3. Add environment AzureChinaCloud in cme  of management server(This is only for Azure China)  
 Updated auto-provisioning commands to include the AzureChinaCloud environment:
 ```
-autoprov_cfg set controller Azure -cn Azure-Production --environment AzureChinaCloud
+autoprov_cfg set controller Azure -cn <NAME> --environment AzureChinaCloud
 ```
 4. Register providers for Azure China
 Registered the required providers for Azure China with the following commands:

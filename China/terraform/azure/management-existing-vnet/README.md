@@ -106,7 +106,7 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **disk_size** | Storage data disk size size(GB) | string | A number in the range 100 - 3995 (GB) | n/a
  |  |  |  |  |  |
- | **vm_os_sku** | A sku of the image to be deployed | string | "mgmt-byol" - BYOL license; <br/>"mgmt-25" - PAYG; | n/a
+ | **vm_os_sku** | A sku of the image to be deployed | string | "mgmt-byol" - BYOL license;  | n/a
  |  |  |  |  |  |
  | **vm_os_offer** | The name of the image offer to be deployed | string | "check-point-cg-r81"; <br/>"check-point-cg-r8110"; <br/>"check-point-cg-r8120"; <br/>"check-point-cg-r82"; | n/a
  |  |  |  |  |  |

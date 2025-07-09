@@ -92,9 +92,9 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **vnet_name** | The name of virtual network that will be created  | string | The name must begin with a letter or number, end with a letter, number or underscore, and may contain only letters, numbers, underscores, periods, or hyphens | n/a
  |  |  |  |  |  |
- | **address_space** | The address space that is used by a Virtual Network  | string | A valid address in CIDR notation  | "10.0.0.0/16"
+ | **address_space** | The address space that is used by a Virtual Network  | string | A valid address in CIDR notation | "10.0.0.0/16"
  |  |  |  |  |  |
- | **subnet_prefix** | Address prefix to be used for network subnet | string | A valid address in CIDR notation  | "10.0.0.0/24"
+ | **subnet_prefix** | Address prefix to be used for network subnet | string | A valid address in CIDR notation | "10.0.0.0/24"
  |  |  |  |  |  |
  | **management_GUI_client_network** | Allowed GUI clients - GUI clients network CIDR  | string | | n/a
  |  |  |  |  |  |
@@ -106,7 +106,7 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **disk_size** | Storage data disk size size(GB) | string | A number in the range 100 - 3995 (GB) | n/a
  |  |  |  |  |  |
- | **vm_os_sku** | A sku of the image to be deployed | string |  "mgmt-byol" - BYOL license; <br/>"mgmt-25" - PAYG; | n/a
+ | **vm_os_sku** | A sku of the image to be deployed | string |  "mgmt-byol" - BYOL license; | n/a
  |  |  |  |  |  |
  | **vm_os_offer** | The name of the image offer to be deployed | string | "check-point-cg-r81"; <br/>"check-point-cg-r8110"; <br/>"check-point-cg-r8120"; <br/>"check-point-cg-r82"; | n/a
  |  |  |  |  |  |
