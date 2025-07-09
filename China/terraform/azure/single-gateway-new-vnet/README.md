@@ -82,6 +82,8 @@ This solution uses the following modules:
  |  |                                                                                                                                                                                                                                                                                                                                 |  |  |                |
  | **subscription_id** | The subscription ID is used to pay for Azure cloud services                                                                                                                                                                                                                                                                     | string | | n/a            
  |  |                                                                                                                                                                                                                                                                                                                                 |  |  |                |
+ | **environment** | The environment of Azure Cloud                                                                                                                                                                                                                                                                                                                                 | string | | n/a                 |
+ |  |  |  |  |  |
  | **source_image_vhd_uri** | The URI of the blob containing the development image. Please use noCustomUri if you want to use marketplace images                                                                                                                                                                                                              | string | | "noCustomUri"  
  |  |                                                                                                                                                                                                                                                                                                                                 |  |  |                |
  | **resource_group_name** | The name of the resource group that will contain the contents of the deployment                                                                                                                                                                                                                                                 | string | Resource group names only allow alphanumeric characters, periods, underscores, hyphens and parenthesis and cannot end in a period | n/a            
@@ -149,6 +151,7 @@ This solution uses the following modules:
     client_id                       = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     tenant_id                       = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     subscription_id                 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    environment                     = "china"
     source_image_vhd_uri            = "noCustomUri"
     resource_group_name             = "checkpoint-single-gw-terraform"
     single_gateway_name             = "checkpoint-single-gw-terraform"

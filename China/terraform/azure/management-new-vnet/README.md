@@ -82,6 +82,8 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **subscription_id** | The subscription ID is used to pay for Azure cloud services | string | | n/a
  |  |  |  |  |  |
+ | **environment** | The environment of Azure Cloud                                                                                                                                                                                                                                                                                                                                 | string | | n/a                 |
+ |  |  |  |  |  |
  | **source_image_vhd_uri** | The URI of the blob containing the development image. Please use noCustomUri if you want to use marketplace images  | string | | "noCustomUri"
  |  |  |  |  |  |
  | **resource_group_name** | The name of the resource group that will contain the contents of the deployment | string | Resource group names only allow alphanumeric characters, periods, underscores, hyphens and parenthesis and cannot end in a period | n/a
@@ -92,9 +94,9 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **vnet_name** | The name of virtual network that will be created  | string | The name must begin with a letter or number, end with a letter, number or underscore, and may contain only letters, numbers, underscores, periods, or hyphens | n/a
  |  |  |  |  |  |
- | **address_space** | The address space that is used by a Virtual Network  | string | A valid address in CIDR notation | "10.0.0.0/16"
+ | **address_space** | The address space that is used by a Virtual Network  | string | A valid address in CIDR notation  | "10.0.0.0/16"
  |  |  |  |  |  |
- | **subnet_prefix** | Address prefix to be used for network subnet | string | A valid address in CIDR notation | "10.0.0.0/24"
+ | **subnet_prefix** | Address prefix to be used for network subnet | string | A valid address in CIDR notation  | "10.0.0.0/24"
  |  |  |  |  |  |
  | **management_GUI_client_network** | Allowed GUI clients - GUI clients network CIDR  | string | | n/a
  |  |  |  |  |  |
@@ -106,7 +108,7 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **disk_size** | Storage data disk size size(GB) | string | A number in the range 100 - 3995 (GB) | n/a
  |  |  |  |  |  |
- | **vm_os_sku** | A sku of the image to be deployed | string |  "mgmt-byol" - BYOL license; | n/a
+ | **vm_os_sku** | A sku of the image to be deployed | string |  "mgmt-byol" - BYOL license;| n/a
  |  |  |  |  |  |
  | **vm_os_offer** | The name of the image offer to be deployed | string | "check-point-cg-r81"; <br/>"check-point-cg-r8110"; <br/>"check-point-cg-r8120"; <br/>"check-point-cg-r82"; | n/a
  |  |  |  |  |  |
@@ -136,6 +138,7 @@ This solution uses the following modules:
     client_id                       = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     tenant_id                       = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     subscription_id                 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    environment                     = "china"
     source_image_vhd_uri            = "noCustomUri"
     resource_group_name             = "checkpoint-mgmt-terraform"
     mgmt_name                       = "checkpoint-mgmt-terraform"
