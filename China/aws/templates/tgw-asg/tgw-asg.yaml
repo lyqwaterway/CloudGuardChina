@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy an Auto Scaling Group of CloudGuard Security Gateways for Transit Gateway with an optional Management Server into an existing VPC (20241027)
+Description: |
+  Deploy an Auto Scaling Group of CloudGuard Security Gateways for Transit Gateway with an optional Management Server into an existing VPC (20250617). 
+  See CloudGuard Network for AWS Auto Scale Group with Transit Gateway deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -22,6 +24,7 @@ Metadata:
       - Label:
           default: Check Point CloudGuard IaaS Security Gateways Auto Scaling Group Configuration
         Parameters:
+          - AutoScaleGroupName
           - GatewayName
           - GatewayInstanceType
           - GatewaysMinSize
@@ -124,6 +127,8 @@ Metadata:
         default: Management Server
       ConfigurationTemplate:
         default: Configuration template
+      AutoScaleGroupName:
+        default: Auto Scale Group name
 Parameters:
   VPC:
     Description: Select an existing VPC.
@@ -545,9 +550,15 @@ Parameters:
     Default: TGW-ASG-configuration
     MinLength: 1
     MaxLength: 30
+  AutoScaleGroupName:
+    Description: The Name of the Auto Scaling Group. (optional)
+    Type: String
+    Default: ""
+    MaxLength: 100
 Conditions:
   VolumeEncryption: !Equals [!Ref EnableVolumeEncryption, true]
   DeployManagement: !Equals [!Ref ManagementDeploy, true]
+  GenerateAutoScalingName: !Equals [!Ref AutoScaleGroupName, ""]
 Resources:
   ManagementStack:
     Type: AWS::CloudFormation::Stack
@@ -610,6 +621,7 @@ Resources:
       TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/autoscale/autoscale.yaml
       Parameters:
         VPC: !Ref VPC
+        AutoScaleGroupName: !If [GenerateAutoScalingName, !Join ["-", [!Ref 'AWS::StackName', GatewayGroup]], !Ref AutoScaleGroupName]
         GatewaysSubnets: !Join [',', !Ref GatewaysSubnets]
         GatewayName: !Ref GatewayName
         GatewayInstanceType: !Ref GatewayInstanceType
