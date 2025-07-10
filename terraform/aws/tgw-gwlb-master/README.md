@@ -64,7 +64,7 @@ secret_key = "my-secret-key"
   //    secret_key = var.aws_secret_access_key
   }
   ```
- 
+
 ## Usage
 - Fill all variables in the /terraform/aws/gwlb/**terraform.tfvars** file with proper values (see below for variables descriptions).
 - From a command line initialize the Terraform configuration directory:
@@ -72,14 +72,14 @@ secret_key = "my-secret-key"
     terraform init
     ```
 - Create an execution plan:
-      ```
-      terraform plan
-      ```
+  ```
+  terraform plan
+  ```
   - Create or modify the deployment:
       ```
       terraform apply
       ```
-  
+
   - Variables are configured in /terraform/aws/qs-autoscale/**terraform.tfvars** file as follows:
 
     ```
