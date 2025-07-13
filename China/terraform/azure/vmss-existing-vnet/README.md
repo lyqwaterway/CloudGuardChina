@@ -81,7 +81,7 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **subscription_id** | The subscription ID is used to pay for Azure cloud services | string | | n/a
  |  |  |  |  |  |
- | **environment** | The environment of Azure Cloud                                                                                                                                                                                                                                                                                                                                 | string | "china"  </br> "public"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | n/a                 |
+ | **environment** | The environment of Azure Cloud | string | "china"  </br> "public"  | n/a  |
  |  |  |  |  |  |
  | **source_image_vhd_uri** | The URI of the blob containing the development image. Please use noCustomUri if you want to use marketplace images  | string | | "noCustomUri" 
  |  |  |  |  |  |
@@ -89,7 +89,7 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **location** | The region where the resources will be deployed at  | string | The full list of Azure regions can be found at https://azure.microsoft.com/regions | n/a
  |  |  |  |  |  |
- | **vmss_name** | The name of the Check Point VMSS Object | string | Only alphanumeric characters are allowed, and the name must be 1-30 characters long<br />Note: vmss_name name must not contain reserved words based on: sk40179 | n/a
+ | **vmss_name** | The name of the Check Point VMSS Object | string | Only alphanumeric characters are allowed, and the name must be 1-30 characters long<br />Note: vmss_name name must not contain reserved words based on: sk40179  | n/a
  |  |  |  |  |  |
  | **vnet_name** | Virtual Network name | string | The name must begin with a letter or number, end with a letter, number or underscore, and may contain only letters, numbers, underscores, periods, or hyphens | n/a
  |  |  |  |  |  |
@@ -109,7 +109,7 @@ This solution uses the following modules:
  |  |  |  |  |  |
  | **disk_size** | Storage data disk size size(GB) must be 100 for versions R81.20 and below | string | A number in the range 100 - 3995 (GB) | 100
  |  |  |  |  |  |
- | **vm_os_sku** | A sku of the image to be deployed | string |  "sg-byol" - BYOL license; | n/a
+ | **vm_os_sku** | A sku of the image to be deployed | string |  "sg-byol" - BYOL license; <br/>"sg-ngtp" - NGTP PAYG license; <br/>"sg-ngtx" - NGTX PAYG license; | n/a
  |  |  |  |  |  |
  | **vm_os_offer** | The name of the image offer to be deployed | string | "check-point-cg-r81"; <br/>"check-point-cg-r8110"; <br/>"check-point-cg-r8120"; <br/>"check-point-cg-r82"; | n/a
  |  |  |  |  |  |
