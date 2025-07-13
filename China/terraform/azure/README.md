@@ -21,7 +21,7 @@ az cloud set --name AzureChinaCloud
 
 2. Modify the variable of Azure Cloud environment in terraform.tfvars
 ```
-environment = "china" # "public" is for Azure global, "china" is for Azure China"
+environment = "china" # "public" is for Azure global, "china" is for Azure China
 ```
 3. Add environment AzureChinaCloud in cme  of management server(This is only for Azure China)  
 Updated auto-provisioning commands to include the AzureChinaCloud environment:
