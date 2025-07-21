@@ -993,7 +993,7 @@
       ],
       "location": "[variables('location')]",
       "name": "[parameters('vmName')]",
-      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
+//      "plan": "[if(equals(parameters('sourceImageVhdUri'),'noCustomUri'), variables('plan'), json('null'))]",
       "properties": {
         "UserData": "[base64(variables('customData'))]",
         "diagnosticsProfile": {
