@@ -697,7 +697,7 @@
     ],
     "customData": "[concat('#cloud-config','\n', if(equals(variables('osVersion'),'R82'),variables('vxlanParametersForR82'), ''),'\n', 'runcmd:\n  - python3 /etc/cloud_config.py ', join(variables('cloudConfigParams'), ' '))]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
-    "imagePublisher": "1723173839932",
+    "imagePublisher": "1740992136172",
     "imageReferenceBYOL": {
       "offer": "[variables('imageOffer')]",
       "publisher": "[variables('imagePublisher')]",
