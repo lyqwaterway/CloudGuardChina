@@ -140,7 +140,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "1723173839932",
+              "publisher": "1740992136172",
               "offer": "check-point-cg-r8110",
               "sku": "mgmt-byol"
             },
@@ -169,7 +169,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "1723173839932",
+              "publisher": "1740992136172",
               "offer": "check-point-cg-r8120",
               "sku": "mgmt-byol"
             },
@@ -198,7 +198,7 @@
             },
             "osPlatform": "Linux",
             "imageReference": {
-              "publisher": "1723173839932",
+              "publisher": "1740992136172",
               "offer": "check-point-cg-r82",
               "sku": "mgmt-byol"
             },

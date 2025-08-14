@@ -258,7 +258,7 @@
     "diskSizeGB": "[add(parameters('additionalDiskSizeGB'), variables('diskSize100GB'))]",
     "customData": "[concat('#!/usr/bin/python3 /etc/cloud_config.py&#10;', '&#10;', 'installationType=\"', variables('installationType'), '\"&#10;', 'allowUploadDownload=\"', variables('allowUploadDownload'), '\"&#10;', 'osVersion=\"', variables('osVersion'), '\"&#10;', 'templateName=\"', variables('templateName'), '\"&#10;', 'isBlink=\"', variables('isBlink'), '\"&#10;', 'templateVersion=\"', variables('templateVersion'), '\"&#10;', 'bootstrapScript64=\"', variables('bootstrapScript64'), '\"&#10;', 'location=\"', variables('location'), '\"&#10;', 'sicKey=\"', variables('sicKey'), '\"&#10;', 'managementGUIClientNetwork=\"', variables('managementGUIClientNetwork'), '\"&#10;', 'adminShell=\"', parameters('adminShell'), '\"&#10;')]",
     "imageOffer": "[concat('check-point-cg-', toLower(variables('osVersion')))]",
-    "imagePublisher": "1723173839932",
+    "imagePublisher": "1740992136172",
     "imageSku": "sg-byol",
     "imageReferenceBYOL": {
       "offer": "[variables('imageOffer')]",

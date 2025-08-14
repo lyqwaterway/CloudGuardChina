@@ -1,8 +1,8 @@
 # China Azure Resource Manager templates
 # 中国 Azure ARM 部署模板
-This directory contains the CloudGuard IaaS solution templates published in the [China Azure Marketplace](https://market.azure.cn/marketplace/apps/1723173839932.checkpoint--cloudguard-iaas?tab=Overview).
+This directory contains the CloudGuard IaaS solution templates published in the [China Azure Marketplace](https://market.azure.cn/marketplace/apps/1740992136172.checkpoint--cloudguard-iaas?tab=Overview).
 
-该目录包含在[中国Azure市场](https://market.azure.cn/marketplace/apps/1723173839932.checkpoint--cloudguard-iaas?tab=Overview)发布的CloudGuard IaaS解决方案模板。
+该目录包含在[中国Azure市场](https://market.azure.cn/marketplace/apps/1740992136172.checkpoint--cloudguard-iaas?tab=Overview)发布的CloudGuard IaaS解决方案模板。
 # How to deploy templates manually
 # 如何手动部署模板
 To deploy the ARM templates manually without using the Azure Marketplace, follow these instructions:  
