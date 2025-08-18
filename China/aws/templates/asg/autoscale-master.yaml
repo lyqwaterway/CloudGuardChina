@@ -490,7 +490,7 @@ Resources:
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: __URL__/utils/vpc.yaml
+      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/vpc.yaml
       Parameters:
         AvailabilityZones: !Join [ ',' , !Ref AvailabilityZones ]
         NumberOfAZs: !Ref NumberOfAZs
@@ -521,7 +521,7 @@ Resources:
     Condition: EnableCloudWatch
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: __URL__/iam/cloudwatch-policy.yaml
+      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/iam/cloudwatch-policy.yaml
       Parameters:
         PolicyName: ChkpGatewayPolicy
         PolicyRole: !Ref ChkpGatewayRole
@@ -535,7 +535,7 @@ Resources:
   AMI:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: __URL__/utils/amis.yaml
+      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/amis.yaml
       Parameters:
         Version: !Join ['-', [!Ref GatewayVersion, GW]]
   NotificationTopic:
