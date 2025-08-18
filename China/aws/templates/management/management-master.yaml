@@ -419,7 +419,7 @@ Resources:
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: __URL__/utils/vpc.yaml
+      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/vpc.yaml
       Parameters:
         AvailabilityZones: !Ref AvailabilityZone
         NumberOfAZs: 1
@@ -430,7 +430,7 @@ Resources:
   AMI:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: __URL__/utils/amis.yaml
+      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/amis.yaml
       Parameters:
         Version: !Join ['-', [!Ref ManagementVersion, MGMT]]
   ManagementReadyHandle:
@@ -506,7 +506,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Condition: CreateRole
     Properties:
-      TemplateURL: __URL__/iam/cme-iam-role.yaml
+      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/iam/cme-iam-role.yaml
       Parameters:
         Permissions: !Ref ManagementPermissions
         STSRoles: !Join [',', !Ref ManagementSTSRoles]
