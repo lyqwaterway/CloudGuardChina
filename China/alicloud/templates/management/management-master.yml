@@ -1,0 +1,95 @@
+ROSTemplateFormatVersion: '2015-09-01'
+Description: >
+  CloudGuard-China ROS — 组合式模板。
+  包含：
+    - VPC 模块
+    - RAM 模块
+    - 管理实例模块
+
+Parameters:
+  ######################################################
+  # VPC 基础配置
+  ######################################################
+  VpcName:
+    Type: String
+    Default: "management-vpc"
+  VpcCidr:
+    Type: String
+    Default: "10.0.0.0/16"
+  PublicVSwitchCidr:
+    Type: String
+    Default: "10.0.1.0/24"
+
+  ######################################################
+  # RAM 配置
+  ######################################################
+  RamRoleName:
+    Type: String
+    Default: "management-role"
+  RamPolicyName:
+    Type: String
+    Default: "management-policy"
+
+  ######################################################
+  # ECS 实例配置
+  ######################################################
+  InstanceName:
+    Type: String
+    Default: "mgmt-instance"
+  InstanceType:
+    Type: String
+    Default: "ecs.g6.large"
+  KeyName:
+    Type: String
+    Default: "my-key"
+  AdminCidr:
+    Type: String
+    Default: "0.0.0.0/0"
+
+Resources:
+  ######################################################
+  # 1️⃣ VPC 模块
+  ######################################################
+  VpcStack:
+    Type: ALIYUN::ROS::Stack
+    Properties:
+      TemplateURL: modules/vpc.yml
+      Parameters:
+        VpcName:       { Ref: VpcName }
+        VpcCidr:       { Ref: VpcCidr }
+        PublicVSwitchCidr: { Ref: PublicVSwitchCidr }
+
+  ######################################################
+  # 2️⃣ RAM 模块
+  ######################################################
+  RamStack:
+    Type: ALIYUN::ROS::Stack
+    Properties:
+      TemplateURL: modules/ram.yml
+      Parameters:
+        RamRoleName:   { Ref: RamRoleName }
+        RamPolicyName: { Ref: RamPolicyName }
+
+  ######################################################
+  # 3️⃣ 管理实例模块
+  ######################################################
+  ManagementStack:
+    Type: ALIYUN::ROS::Stack
+    Properties:
+      TemplateURL: modules/management.yml
+      Parameters:
+        VpcId:          { Fn::GetAtt: [VpcStack, Outputs.VpcId] }
+        VSwitchId:      { Fn::GetAtt: [VpcStack, Outputs.PublicVSwitchId] }
+        RamRoleName:    { Fn::GetAtt: [RamStack, Outputs.RamRoleName] }
+        InstanceName:   { Ref: InstanceName }
+        InstanceType:   { Ref: InstanceType }
+        KeyName:        { Ref: KeyName }
+        AdminCidr:      { Ref: AdminCidr }
+
+Outputs:
+  VpcId:
+    Value: { Fn::GetAtt: [VpcStack, Outputs.VpcId] }
+  RamRoleName:
+    Value: { Fn::GetAtt: [RamStack, Outputs.RamRoleName] }
+  ManagementInstanceId:
+    Value: { Fn::GetAtt: [ManagementStack, Outputs.InstanceId] }
