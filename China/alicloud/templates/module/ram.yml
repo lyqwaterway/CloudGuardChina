@@ -1,0 +1,57 @@
+ROSTemplateFormatVersion: '2015-09-01'
+Description: >
+  创建 RAM 角色与自定义策略，并进行绑定。
+  用于管理实例访问阿里云其他资源（例如 VPC, ECS 等）。
+
+Parameters:
+  RamRoleName:
+    Type: String
+    Default: management-role
+  RamPolicyName:
+    Type: String
+    Default: management-policy
+
+Resources:
+  RamRole:
+    Type: ALIYUN::RAM::Role
+    Properties:
+      RoleName: { Ref: RamRoleName }
+      Description: "Role for management ECS to assume"
+      AssumeRolePolicyDocument:
+        Version: "1"
+        Statement:
+          - Effect: Allow
+            Principal:
+              RAM: "*"
+            Action: "sts:AssumeRole"
+
+  RamPolicy:
+    Type: ALIYUN::RAM::ManagedPolicy
+    Properties:
+      PolicyName: { Ref: RamPolicyName }
+      Description: Custom management policy for control access
+      PolicyDocument:
+        Version: "1"
+        Statement:
+          - Effect: Allow
+            Action:
+              - ecs:*
+              - vpc:*
+              - ram:*
+              - sls:*
+            Resource: "*"
+
+  RamAttach:
+    Type: ALIYUN::RAM::AttachPolicyToRole
+    Properties:
+      PolicyName: { Ref: RamPolicy }
+      PolicyType: Custom
+      RoleName: { Ref: RamRole }
+
+Outputs:
+  RamRoleName:
+    Description: 创建的RAM角色名称
+    Value: { Ref: RamRole }
+  RamPolicyName:
+    Description: 创建的策略名称
+    Value: { Ref: RamPolicy }

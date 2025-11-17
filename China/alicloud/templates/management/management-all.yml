@@ -1,0 +1,188 @@
+ROSTemplateFormatVersion: '2015-09-01'
+Description: CloudGuard-China 管理环境一体化 ROS 模板
+Parameters:
+  VpcName:
+    Type: String
+    Default: management-vpc
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+  PublicVSwitchCidr:
+    Type: String
+    Default: 10.0.1.0/24
+  ZoneId:
+    Type: String
+    Default: cn-hangzhou-i
+  RamRoleName:
+    Type: String
+    Default: management-role
+  RamPolicyName:
+    Type: String
+    Default: management-policy
+  InstanceName:
+    Type: String
+    Default: management-ecs
+  InstanceType:
+    Type: String
+    Default: ecs.g6.large
+  KeyName:
+    Type: String
+    Default: my-key
+  AdminCidr:
+    Type: String
+    Default: 0.0.0.0/0
+  VolumeSize:
+    Type: Number
+    Default: 40
+  DiskCategory:
+    Type: String
+    Default: cloud_efficiency
+  ImageId:
+    Type: String
+    Default: m-2ze3yvmsofcta0ot3vzg
+  BootstrapScript:
+    Type: String
+    Default: |
+      #!/bin/bash
+      echo "Hello CloudGuard Management Instance" > /root/init.txt
+      hostnamectl set-hostname management
+      yum install -y wget curl unzip
+      systemctl enable sshd && systemctl start sshd
+Resources:
+  VPC:
+    Type: 'ALIYUN::ECS::VPC'
+    Properties:
+      VpcName:
+        Ref: VpcName
+      CidrBlock:
+        Ref: VpcCidr
+      Description: Management VPC
+      EnableIpv6: false
+  PublicVSwitch:
+    Type: 'ALIYUN::ECS::VSwitch'
+    Properties:
+      ZoneId:
+        Ref: ZoneId
+      VSwitchName: public-subnet
+      CidrBlock:
+        Ref: PublicVSwitchCidr
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Module
+          Value: Network
+  RamRole:
+    Type: 'ALIYUN::RAM::Role'
+    Properties:
+      RoleName:
+        Ref: RamRoleName
+      Description: Role for management ECS
+      AssumeRolePolicyDocument:
+        Version: '1'
+        Statement:
+          - Effect: Allow
+            Principal:
+              RAM:
+                - 'acs:ram::<YourAccountId>:root'
+            Action: 'sts:AssumeRole'
+  RamPolicy:
+    Type: 'ALIYUN::RAM::ManagedPolicy'
+    Properties:
+      PolicyName:
+        Ref: RamPolicyName
+      Description: Management access policy
+      PolicyDocument:
+        Version: '1'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ecs:*'
+              - 'vpc:*'
+              - 'ram:*'
+              - 'sls:*'
+            Resource:
+              - '*'
+  RamAttach:
+    Type: 'ALIYUN::RAM::AttachPolicyToRole'
+    Properties:
+      PolicyName:
+        Ref: RamPolicy
+      PolicyType: Custom
+      RoleName:
+        Ref: RamRole
+  ManagementSG:
+    Type: 'ALIYUN::ECS::SecurityGroup'
+    Properties:
+      SecurityGroupName: management-sg
+      VpcId:
+        Ref: VPC
+      Description: Allow admin limited access for management
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          PortRange: 22/22
+          SourceCidrIp:
+            Ref: AdminCidr
+        - IpProtocol: tcp
+          PortRange: 443/443
+          SourceCidrIp:
+            Ref: AdminCidr
+      SecurityGroupEgress:
+        - IpProtocol: all
+          PortRange: '-1/-1'
+          DestCidrIp: 0.0.0.0/0
+  ManagementEcs:
+    Type: 'ALIYUN::ECS::Instance'
+    Properties:
+      InstanceName:
+        Ref: InstanceName
+      InstanceType:
+        Ref: InstanceType
+      ImageId:
+        Ref: ImageId
+      VSwitchId:
+        Ref: PublicVSwitch
+      SecurityGroupId:
+        Ref: ManagementSG
+      KeyPairName:
+        Ref: KeyName
+      AllocatePublicIP: true
+      InternetMaxBandwidthOut: 50
+      RamRoleName:
+        Ref: RamRoleName
+      DiskMappings:
+        - Category:
+            Ref: DiskCategory
+          Size:
+            Ref: VolumeSize
+          Device: /dev/xvdb
+      UserData: |
+        Fn::Base64: { Ref: BootstrapScript }
+      Tags:
+        - Key: Purpose
+          Value: Management
+        - Key: Stack
+          Value:
+            Ref: 'ALIYUN::StackName'
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value:
+      Ref: VPC
+  VSwitchId:
+    Description: Public VSwitch ID
+    Value:
+      Ref: PublicVSwitch
+  RamRoleName:
+    Description: Created RAM Role Name
+    Value:
+      Ref: RamRole
+  InstanceId:
+    Description: 管理ECS实例ID
+    Value:
+      Ref: ManagementEcs
+  PublicIp:
+    Description: 管理实例公网IP
+    Value:
+      'Fn::GetAtt':
+        - ManagementEcs
+        - PublicIp

@@ -1,0 +1,57 @@
+ROSTemplateFormatVersion: '2015-09-01'
+Description: Launch management ECS inside VPC, attach RAM Role
+
+Parameters:
+  VpcId:
+    Type: String
+  VSwitchId:
+    Type: String
+  RamRoleName:
+    Type: String
+  InstanceName:
+    Type: String
+  InstanceType:
+    Type: String
+  KeyName:
+    Type: String
+  AdminCidr:
+    Type: String
+
+Resources:
+  SG:
+    Type: ALIYUN::ECS::SecurityGroup
+    Properties:
+      SecurityGroupName: "management-sg"
+      VpcId: { Ref: VpcId }
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          PortRange: 22/22
+          SourceCidrIp: { Ref: AdminCidr }
+        - IpProtocol: tcp
+          PortRange: 443/443
+          SourceCidrIp: { Ref: AdminCidr }
+      SecurityGroupEgress:
+        - IpProtocol: all
+          PortRange: -1/-1
+          DestCidrIp: 0.0.0.0/0
+
+  ManagementEcs:
+    Type: ALIYUN::ECS::Instance
+    Properties:
+      InstanceName: { Ref: InstanceName }
+      InstanceType: { Ref: InstanceType }
+      KeyPairName: { Ref: KeyName }
+      VSwitchId: { Ref: VSwitchId }
+      SecurityGroupId: { Ref: SG }
+      RoleName: { Ref: RamRoleName }
+      AllocatePublicIP: true
+      InternetMaxBandwidthOut: 50
+      ImageId: aliyun_2_1903_x64_20G_alibase_20230906.vhd
+      Tags:
+        - Key: Purpose
+          Value: "Management"
+
+Outputs:
+  InstanceId:
+    Description: 管理实例 ID
+    Value: { Ref: ManagementEcs }
