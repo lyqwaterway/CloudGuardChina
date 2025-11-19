@@ -146,8 +146,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D3_v2",
-              "Standard_DS3_v2"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -259,8 +258,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D3_v2",
-              "Standard_DS3_v2"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -372,8 +370,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D3_v2",
-              "Standard_DS3_v2"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -485,8 +482,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D4ds_v5",
-              "Standard_D4d_v5"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -598,8 +594,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D4ds_v5",
-              "Standard_D4d_v5"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -711,8 +706,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D4ds_v5",
-              "Standard_D4d_v5"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -824,8 +818,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D4ds_v5",
-              "Standard_D4d_v5"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -937,8 +930,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D4ds_v5",
-              "Standard_D4d_v5"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
@@ -1050,8 +1042,7 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Security Gateway",
             "recommendedSizes": [
-              "Standard_D4ds_v5",
-              "Standard_D4d_v5"
+              "Standard_D4_v4"
             ],
             "constraints": {
               "allowedSizes": [
