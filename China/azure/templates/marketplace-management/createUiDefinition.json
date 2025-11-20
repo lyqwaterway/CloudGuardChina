@@ -124,7 +124,8 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Management",
             "recommendedSizes": [
-              "Standard_D4_v4"
+              "Standard_D4ds_v4",
+              "Standard_D4d_v4"
             ],
             "constraints": {
               "excludedSizes": [
@@ -152,7 +153,8 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Management",
             "recommendedSizes": [
-              "Standard_D4_v4"
+              "Standard_D4ds_v4",
+              "Standard_D4d_v4"
             ],
             "constraints": {
               "excludedSizes": [
@@ -180,7 +182,8 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Management",
             "recommendedSizes": [
-              "Standard_D4_v4"
+              "Standard_D4ds_v4",
+              "Standard_D4d_v4"
             ],
             "constraints": {
               "excludedSizes": [
@@ -208,7 +211,8 @@
             "label": "Virtual machine size",
             "toolTip": "The VM size of the Management",
             "recommendedSizes": [
-              "Standard_D4_v4"
+              "Standard_D4ds_v4",
+              "Standard_D4d_v4"
             ],
             "constraints": {
               "excludedSizes": [
