@@ -21,8 +21,7 @@
       "allowedValues": [
         "R81.10 - Bring Your Own License",
         "R81.20 - Bring Your Own License",
-        "R82 - Bring Your Own License",
-        "R82.10 - Bring Your Own License"
+        "R82 - Bring Your Own License"
       ],
       "defaultValue": "R82 - Bring Your Own License",
       "metadata": {
@@ -410,7 +409,7 @@
     "addStorageAccountIpRules": {
       "type": "bool",
       "metadata": {
-        "description": "Add Storage Account IP rules that allow access to the Serial Console only for IPs based on their geographic location, based on https://learn.microsoft.com/zh-cn/troubleshoot/azure/virtual-machines/serial-console-linux#use-serial-console-with-custom-boot-diagnostics-storage-account-firewall-enabled. Only relevant when 'Storage Account Deploy Mode' is set to 'New'."
+        "description": "Add Storage Account IP rules that allow access to the Serial Console only for IPs based on their geographic location, based on https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/serial-console-linux#use-serial-console-with-custom-boot-diagnostics-storage-account-firewall-enabled. Only relevant when 'Storage Account Deploy Mode' is set to 'New'."
       },
       "defaultValue": false
     },
@@ -443,10 +442,7 @@
       "R81.20 - Pay As You Go (NGTX)": "NGTX",
       "R82 - Bring Your Own License": "BYOL",
       "R82 - Pay As You Go (NGTP)": "NGTP",
-      "R82 - Pay As You Go (NGTX)": "NGTX",
-      "R82.10 - Bring Your Own License": "BYOL",
-      "R82.10 - Pay As You Go (NGTP)": "NGTP",
-      "R82.10 - Pay As You Go (NGTX)": "NGTX"
+      "R82 - Pay As You Go (NGTX)": "NGTX"
     },
     "offer": "[variables('offers')[parameters('cloudGuardVersion')]]",
     "osVersions": {
@@ -458,10 +454,7 @@
       "R81.20 - Pay As You Go (NGTX)": "R8120",
       "R82 - Bring Your Own License": "R82",
       "R82 - Pay As You Go (NGTP)": "R82",
-      "R82 - Pay As You Go (NGTX)": "R82",
-      "R82.10 - Bring Your Own License": "R8210",
-      "R82.10 - Pay As You Go (NGTP)": "R8210",
-      "R82.10 - Pay As You Go (NGTX)": "R8210"
+      "R82 - Pay As You Go (NGTX)": "R82"
     },
     "osVersion": "[variables('osVersions')[parameters('cloudGuardVersion')]]",
     "serialConsoleGeographies": {
