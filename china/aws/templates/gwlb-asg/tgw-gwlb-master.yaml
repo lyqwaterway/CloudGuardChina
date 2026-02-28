@@ -727,7 +727,7 @@ Resources:
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/vpc.yaml
+      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/vpc.yaml
       Parameters:
         AvailabilityZones: !Join [',', !Ref AvailabilityZones]
         NumberOfAZs: !Ref NumberOfAZs
@@ -745,7 +745,7 @@ Resources:
   TgwGwlbStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/gwlb/tgw-gwlb.yaml
+      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/gwlb/tgw-gwlb.yaml
       Parameters:
         VPC: !GetAtt VPCStack.Outputs.VPCID
         AutoScaleGroupName: !If [GenerateAutoScalingName, !Join ["-", [!Ref 'AWS::StackName', GatewayGroup]], !Ref AutoScaleGroupName]

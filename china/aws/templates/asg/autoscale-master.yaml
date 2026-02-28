@@ -477,7 +477,7 @@ Resources:
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/vpc.yaml
+      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/vpc.yaml
       Parameters:
         AvailabilityZones: !Join [ ',' , !Ref AvailabilityZones ]
         NumberOfAZs: !Ref NumberOfAZs
@@ -493,7 +493,7 @@ Resources:
   AutoScaleStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/autoscale/autoscale.yaml
+      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/autoscale/autoscale.yaml
       Parameters:
         VPC: !GetAtt VPCStack.Outputs.VPCID
         GatewaysSubnets: !Join

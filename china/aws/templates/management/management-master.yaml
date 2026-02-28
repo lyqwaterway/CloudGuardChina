@@ -416,7 +416,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL:
-        !If [IsIPv6Enabled, https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/vpc-ipv6.yaml, https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/utils/vpc.yaml]
+        !If [IsIPv6Enabled, https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/vpc-ipv6.yaml, https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/vpc.yaml]
       Parameters:
         AvailabilityZones: !Ref AvailabilityZone
         NumberOfAZs: 1
@@ -428,7 +428,7 @@ Resources:
   ManagementStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgi-cfts.s3.cn-northwest-1.amazonaws.com.cn/management/management.yaml
+      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/management/management.yaml
       Parameters:
         VPC: !GetAtt VPCStack.Outputs.VPCID
         ManagementSubnet: !GetAtt VPCStack.Outputs.PublicSubnet1ID
