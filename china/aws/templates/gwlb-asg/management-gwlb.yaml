@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point Management Server (20260122)
+  Deploys a Check Point Management Server (20260302)
   See sk130372 administration guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -236,7 +236,7 @@ Parameters:
   VolumeSize:
     Type: Number
     MinValue: 100
-    Default: 100
+    Default: 200
   VolumeType:
     Description: General Purpose SSD Volume Type
     Type: String
@@ -280,7 +280,7 @@ Parameters:
       - Create with read permissions
       - Create with read-write permissions
   ManagementPredefinedRole:
-    Description: A predefined IAM role to attach to the instance profile. Ignored
+    Description: A predefined IAM role to attach to the instance profile. Ignored.
       if IAM role is not set to 'Use existing'.
     Type: String
     Default: ''
@@ -396,7 +396,7 @@ Conditions:
   EncryptedVolume: !Not [!Equals [!Ref VolumeEncryption, '']]
   UseRole: !Not [!Equals [!Ref ManagementPermissions, None (configure later)]]
   NoSIC: !Equals [!Ref ManagementSICKey, '']
-  PreRole: !And [!Condition UseRole, !Not [!Condition CreateRole]]
+  PreRole: !And [!Condition UseRole, !Not [!Condition CreateRole], !Not [!Equals [!Ref ManagementPredefinedRole, '']]]
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
 Resources:
   AMI:
@@ -405,17 +405,6 @@ Resources:
       TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/amis.yaml
       Parameters:
         Version: !Join ['-', [!Ref ManagementVersion, MGMT]]
-  ManagementReadyHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-    Condition: EIP
-    Properties: {}
-  ManagementReadyCondition:
-    Type: AWS::CloudFormation::WaitCondition
-    Condition: EIP
-    DependsOn: ManagementInstance
-    Properties:
-      Handle: !Ref ManagementReadyHandle
-      Timeout: 1800
   ManagementSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -491,7 +480,6 @@ Resources:
         - !Ref ManagementPredefinedRole
   ManagementInstance:
     Type: AWS::EC2::Instance
-    DependsOn: ManagementLaunchTemplate
     Properties:
       LaunchTemplate:
         LaunchTemplateId: !Ref ManagementLaunchTemplate
@@ -520,12 +508,12 @@ Resources:
         BlockDeviceMappings:
           - DeviceName: '/dev/xvda'
             Ebs:
-              Encrypted: !If [ EncryptedVolume, true, false ]
-              KmsKeyId: !If [ EncryptedVolume, !Ref VolumeEncryption, !Ref 'AWS::NoValue' ]
+              Encrypted: !If [EncryptedVolume, true, false]
+              KmsKeyId: !If [EncryptedVolume, !Ref VolumeEncryption, !Ref 'AWS::NoValue']
               VolumeType: !Ref VolumeType
               VolumeSize: !Ref VolumeSize
         IamInstanceProfile:
-          Name: !If [ UseRole, !If [ PreRole, !Ref InstanceProfile, !GetAtt ManagementRoleStack.Outputs.CMEIAMRole ], !Ref 'AWS::NoValue' ]
+          Name: !If [UseRole, !If [CreateRole, !GetAtt ManagementRoleStack.Outputs.CMEIAMRole, !If [PreRole, !Ref InstanceProfile, !Ref 'AWS::NoValue']], !Ref 'AWS::NoValue']
         UserData:
           'Fn::Base64':
             !Join
@@ -536,14 +524,13 @@ Resources:
               - '  - |'
               - '    set -e'
               - !Sub '    admin_shell=${Shell} ; allow_info=${AllowUploadDownload} ; hostname=${ManagementHostname} ; primary_mgmt=${PrimaryManagement} ; eic=${EnableInstanceConnect} ; admin_subnet=${AdminCIDR} ; eip=${AllocatePublicAddress} ; ntp1=${NTPPrimary} ; ntp2=${NTPSecondary}'
-              - !If [EIP, !Sub '    wait_handle=''${ManagementReadyHandle}''',!Ref 'AWS::NoValue']
               - !If [NoSIC, '    sic=""', !Join ['', ['    sic="$(echo ', 'Fn::Base64': !Ref ManagementSICKey, ')"']]]
               - !Join ['', ['    pwd_hash="$(echo ', 'Fn::Base64': !Ref ManagementPasswordHash, ')"']]
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref ManagementMaintenancePasswordHash, ')"']]
               - !If [ManageOverInternetAndEIP, '    pub_mgmt=true', '    pub_mgmt=false']
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref ManagementBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref ManagementVersion]]}]
-              - '    python3 /etc/cloud_config.py waitHandle=\"${wait_handle}\" sicKey=\"${sic}\" installationType=\"management\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260122\" templateName=\"management_gwlb\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" primary=\"${primary_mgmt}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" overTheInternet=\"${pub_mgmt}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py sicKey=\"${sic}\" installationType=\"management\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"management_gwlb\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" primary=\"${primary_mgmt}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" overTheInternet=\"${pub_mgmt}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   PublicAddress:
     Type: AWS::EC2::EIP
@@ -553,7 +540,6 @@ Resources:
   AddressAssoc:
     Type: AWS::EC2::EIPAssociation
     Condition: EIP
-    DependsOn: ManagementInstance
     Properties:
       InstanceId: !Ref ManagementInstance
       AllocationId: !GetAtt PublicAddress.AllocationId

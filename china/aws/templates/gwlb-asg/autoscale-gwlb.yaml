@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Create an Auto Scaling group of Check Point gateways (20260122)
+  Create an Auto Scaling group of Check Point gateways (20260302)
   See CloudGuard Network for AWS Gateway Load Balancer Auto Scaling Group Deployment Guide administration guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -235,7 +235,7 @@ Parameters:
     ConstraintDescription: Must be the name of an existing EC2 KeyPair.
   VolumeSize:
     Type: Number
-    Default: 100
+    Default: 200
     MinValue: 100
   VolumeType:
     Description: General Purpose SSD Volume Type
@@ -399,8 +399,8 @@ Conditions:
   EnableCloudWatch: !Equals [!Ref CloudWatch, true]
   CreateELB: !Not [!Equals [!Ref ELBType, none]]
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
-  GenerateAutoScalingName: !Equals [!Ref AutoScaleGroupName, ""]
   IsIPv6Enabled: !Not [!Equals [!Ref IPMode, "IPv4"]]
+  IsIPv4Enabled: !Not [!Equals [!Ref IPMode, "IPv6"]]
 Resources:
   ChkpGatewayRole:
     Type: AWS::IAM::Role
@@ -484,9 +484,7 @@ Resources:
           CidrIp: 0.0.0.0/0
   GatewayGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
-    DependsOn: GatewayLaunchTemplate
     Properties:
-      # AutoScalingGroupName: !If [GenerateAutoScalingName, !Join ["-", [!Ref 'AWS::StackName', GatewayGroup]], !Ref AutoScaleGroupName]
       VPCZoneIdentifier: !Ref GatewaysSubnets
       LaunchTemplate:
         LaunchTemplateId: !Ref GatewayLaunchTemplate
@@ -581,12 +579,16 @@ Resources:
               - '  - |'
               - '    set -e'
               - !Sub '    admin_shell=${Shell} ; allow_info=${AllowUploadDownload} ; cw=${CloudWatch} ; eic=${EnableInstanceConnect}'
+              - !If
+                - IsIPv6Enabled
+                - !If [IsIPv4Enabled, "    template_name=\"autoscale_dual_stack\"", "    template_name=\"autoscale_ipv6\""]
+                - "    template_name=\"autoscale\""
               - !Join ['', ['    sic="$(echo ', 'Fn::Base64': !Ref GatewaySICKey, ')"']]
               - !Join ['', ['    pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayPasswordHash, ')"']]
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayMaintenancePasswordHash, ')"']]
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref GatewayBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref GatewayVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" installationType=\"autoscale\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260122\" templateName=\"autoscale_gwlb\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" installationType=\"autoscale\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   GatewayScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
@@ -655,7 +657,7 @@ Outputs:
     Value: !GetAtt PermissiveSecurityGroup.GroupId
 Rules:
   GatewayAddressAllocationRule:
-    RuleCondition: !Equals [!Ref ControlGatewayOverPrivateOrPublicAddress, 'public'] 
-    Assertions:  
+    RuleCondition: !Equals [!Ref ControlGatewayOverPrivateOrPublicAddress, 'public']
+    Assertions:
       - AssertDescription: "Gateway's selected to be provisioned by public IP, but ['AllocatePublicAddress'] parameter is false"
         Assert: !Equals [!Ref AllocatePublicAddress, 'true']
