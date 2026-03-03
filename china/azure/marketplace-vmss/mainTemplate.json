@@ -479,7 +479,7 @@
     "_artifactsLocation": {
       "type": "string",
       "metadata": {
-        "description": "Use the following URI when deploying a custom template: https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/templates/"
+        "description": "Use the following URI when deploying a custom template: https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/"
       },
       "defaultValue": "[deployment().properties.templateLink.uri]"
     },
@@ -1474,7 +1474,7 @@
     "sicKey": "[parameters('sicKey')]",
     "installationType": "vmss",
     "upgrading": "[equals(parameters('upgrading'), 'yes')]",
-    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/templates/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/templates/',parameters('_artifactsLocation'))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/',parameters('_artifactsLocation'))]",
     "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-2-subnet-ha-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
     "networkSetupURLDualstack": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-2-subnet-dualstack-new.json', parameters('_artifactsLocationSasToken')))]",
     "networkNewDeploymentName": "[if(parameters('enableIPv6'), 'networkNewSetupDualstack', 'networkNewSetup')]",
