@@ -565,7 +565,6 @@ Resources:
               - '        - *eth0-dns1'
               - '    bridge_interfaces:'
               - '      - eth0'
-              - !If [IsIPv6Enabled, '  ipv6_enabled: true', '  ipv6_enabled: false']
               - 'kernel_parameters:'
               - '  sim:'
               - '    - sim_geneve_enabled=1'
@@ -574,7 +573,21 @@ Resources:
               - '    - fwtls_bridge_mode_inspection=1'
               - '    - fw_geneve_enabled=1'
               - 'bootcmd:'
-              - '    - $CGEDIR/scripts/hairpin_on.sh AwsGwlb'
+              - '    - echo "brctl hairpin br0 eth0 on" >> /etc/rc.local'
+              - '    - echo "cpprod_util CPPROD_SetValue \"fw1\" \"AwsGwlb\" 4 1 1" >> /etc/rc.local'
+              - !If
+                - IsIPv6Enabled
+                - !Join
+                  - "\n"
+                  - - "    - |"
+                    - "      gparam_file_path=\"$(find $PPKDIR/boot/modules/ -regextype egrep -regex '.*(sim_kern_64_3_10_64_v6|sim_kern_64_v6)\\.gparams')\""
+                    - "      if cat $gparam_file_path | grep -q sim_geneve_enabled ; then"
+                    - "         cp /etc/basedb /etc/basedb.bak"
+                    - "         grep -vx \"ipv6 t\" /etc/basedb.bak | grep -vx \"ipv6 f\" > /etc/basedb"
+                    - "         echo \"ipv6 t\" >> /etc/basedb"
+                    - "         /etc/rc3.d/S07ipv6gen"
+                    - "      fi"
+                - "    - echo 'IPv6 not enabled'"
               - 'runcmd:'
               - '  - |'
               - '    set -e'
