@@ -1,9 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-<<<<<<< HEAD
-Description: Deploys a Check Point Cluster into an existing VPC (20260101)
-=======
 Description: Deploys a Check Point Cluster into an existing VPC (20260302)
->>>>>>> ccf82ff (fix(CGNSPC-1245): CGNS | AWS | CFT | Temporary Phone Home Removal.)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
