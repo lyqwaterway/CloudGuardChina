@@ -1,5 +1,8 @@
+---
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploy a Gateway Load Balancer, Check Point CloudGuard IaaS Security Gateway Auto Scaling Group, and optionally a Security Management Server, Gateway Load Balancer Endpoints and NAT Gateways for each AZ, in a new VPC for Transit Gateway (20260101)
+Description: |
+  Deploy a Gateway Load Balancer, Check Point CloudGuard IaaS Security Gateway Auto Scaling Group, and optionally a Security Management Server, Gateway Load Balancer Endpoints and NAT Gateways for each AZ, in a new VPC for Transit Gateway (20260302).
+  See CloudGuard Network for AWS Gateway Load Balancer Auto Scaling Group deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -136,7 +139,7 @@ Metadata:
       TargetGroupName:
         default: Target Group Name
       CrossZoneLoadBalancing:
-        default:  Enable Cross Zone Load Balancing
+        default: Enable Cross Zone Load Balancing
       GatewayName:
         default: Gateways name
       GatewayInstanceType:
@@ -303,7 +306,7 @@ Parameters:
   VolumeSize:
     Type: Number
     MinValue: 100
-    Default: 100
+    Default: 200
   VolumeType:
     Description: General Purpose SSD Volume Type
     Type: String
@@ -511,7 +514,6 @@ Parameters:
     Type: String
     Default: R82-BYOL
     AllowedValues:
-      - R81.10-BYOL
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
@@ -721,7 +723,6 @@ Conditions:
   4AZs: !Equals [!Ref NumberOfAZs, 4]
   3AZs: !Or [!Equals [!Ref NumberOfAZs, 3], !Condition 4AZs]
   DeployManagement: !Equals [!Ref ManagementDeploy, true]
-  VolumeEncryption: !Equals [!Ref EnableVolumeEncryption, true]
   GenerateAutoScalingName: !Equals [!Ref AutoScaleGroupName, ""]
 Resources:
   VPCStack:

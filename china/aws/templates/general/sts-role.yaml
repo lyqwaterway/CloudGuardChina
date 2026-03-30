@@ -1,3 +1,4 @@
+---
 AWSTemplateFormatVersion: 2010-09-09
 Description: Creates an IAM role for cross account permissions (20190313)
 Metadata:
@@ -7,7 +8,7 @@ Metadata:
           default: Cross Account Permissions Configuration
         Parameters:
           - TrustedAccount
-          - Permissions
+          - STSPermissions
     ParameterLabels:
       TrustedAccount:
         default: Trusted Account ID
@@ -26,9 +27,6 @@ Parameters:
       - Read only
       - Read-Write
 Conditions:
-  AllowReadPermissions: !Or
-    - !Equals [!Ref STSPermissions, Read only]
-    - !Equals [!Ref STSPermissions, Read-Write]
   AllowCreateVPNPermissions: !Equals [!Ref STSPermissions, Read-Write]
 Resources:
   Role:
@@ -48,9 +46,9 @@ Resources:
         - PolicyName: Policy
           PolicyDocument:
             Version: 2012-10-17
-            Statement:
-              - !If
-                - AllowReadPermissions
+            Statement: !If
+              - AllowCreateVPNPermissions
+              -  # AllowReadPermissions = true, AllowCreateVPNPermissions = true
                 - Effect: Allow
                   Action:
                     - ec2:DescribeInstances
@@ -68,9 +66,7 @@ Resources:
                     - elasticloadbalancing:DescribeTargetHealth
                     - autoscaling:DescribeAutoScalingGroups
                   Resource: '*'
-                - !Ref 'AWS::NoValue'
-              - !If
-                - AllowCreateVPNPermissions
+
                 - Effect: Allow
                   Action:
                     - ec2:DescribeCustomerGateways
@@ -96,23 +92,35 @@ Resources:
                     - ec2:DisableTransitGatewayRouteTablePropagation
                     - ec2:GetTransitGatewayAttachmentPropagations
                   Resource: '*'
-                - !Ref 'AWS::NoValue'
-              - !If
-                - AllowCreateVPNPermissions
+
                 - Effect: Allow
                   Action:
                     - cloudformation:DescribeStacks
                     - cloudformation:DescribeStackResources
                   Resource: '*'
-                - !Ref 'AWS::NoValue'
-              - !If
-                - AllowCreateVPNPermissions
                 - Effect: Allow
                   Action:
                     - cloudformation:CreateStack
                     - cloudformation:DeleteStack
                   Resource: arn:aws-cn:cloudformation:*:*:stack/vpn-by-tag--*/*
-                - !Ref 'AWS::NoValue'
+              -  # AllowReadPermissions = true, AllowCreateVPNPermissions = false
+                - Effect: Allow
+                  Action:
+                    - ec2:DescribeInstances
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:DescribeSubnets
+                    - ec2:DescribeVpcs
+                    - ec2:DescribeVpnGateways
+                    - ec2:DescribeVpnConnections
+                    - ec2:DescribeSecurityGroups
+                    - elasticloadbalancing:DescribeLoadBalancers
+                    - elasticloadbalancing:DescribeTags
+                    - elasticloadbalancing:DescribeListeners
+                    - elasticloadbalancing:DescribeTargetGroups
+                    - elasticloadbalancing:DescribeRules
+                    - elasticloadbalancing:DescribeTargetHealth
+                    - autoscaling:DescribeAutoScalingGroups
+                  Resource: '*'
 Outputs:
   Role:
     Description: The role ARN to assume by the trusted account.
