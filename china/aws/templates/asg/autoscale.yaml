@@ -1,5 +1,8 @@
+---
 AWSTemplateFormatVersion: 2010-09-09
-Description: Create an Auto Scaling group of Check Point gateways into an existing VPC (20260101)
+Description: |
+  Create an Auto Scaling group of Check Point gateways into an existing VPC (20260316)
+  See CloudGuard Network for AWS Auto Scale Group deployment guide for detailed deployment and configuration steps
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -19,6 +22,7 @@ Metadata:
           default: Advanced Settings
         Parameters:
           - GatewayName
+          - IPMode
           - VolumeSize
           - VolumeType
           - EnableVolumeEncryption
@@ -38,9 +42,6 @@ Metadata:
           - ControlGatewayOverPrivateOrPublicAddress
           - ManagementServer
           - ConfigurationTemplate
-          - ELBType
-          - ELBPort
-          - ELBClients
     ParameterLabels:
       VPC:
         default: VPC
@@ -52,6 +53,8 @@ Metadata:
         default: Gateways Instance type
       KeyName:
         default: Key name
+      IPMode:
+        default: IP Configuration Mode
       VolumeSize:
         default: Root volume size (GB)
       VolumeType:
@@ -92,12 +95,6 @@ Metadata:
         default: Management Server Settings - Server
       ConfigurationTemplate:
         default: Management Server Settings - Configuration template
-      ELBType:
-        default: Proxy Settings - Proxy type
-      ELBPort:
-        default: Proxy Settings - Proxy port
-      ELBClients:
-        default: Proxy Settings - Allowed proxy clients
       AutoScaleGroupName:
         default: Auto Scale Group name
 Parameters:
@@ -234,9 +231,17 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     MinLength: 1
     ConstraintDescription: Must be the name of an existing EC2 KeyPair.
+  IPMode:
+    Description: Specifies the IP mode for the Autoscale Group and AWS resources.
+    Type: String
+    AllowedValues:
+      - IPv4
+      # - IPv6
+      - DualStack
+    Default: IPv4
   VolumeSize:
     Type: Number
-    Default: 100
+    Default: 200
     MinValue: 100
   VolumeType:
     Description: General Purpose SSD Volume Type
@@ -363,20 +368,6 @@ Parameters:
     Default: ASG-configuration
     MinLength: 1
     MaxLength: 30
-  ELBType:
-    Type: String
-    Default: none
-    AllowedValues:
-      - none
-      - internal
-      - internet-facing
-  ELBPort:
-    Type: Number
-    Default: 8080
-  ELBClients:
-    Type: String
-    Default: 0.0.0.0/0
-    AllowedPattern: '^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})$'
   AutoScaleGroupName:
     Description: The Name of the Auto Scaling Group. (optional)
     Type: String
@@ -387,9 +378,10 @@ Conditions:
   ProvidedAdminEmail: !Not [!Equals [!Ref AdminEmail, '']]
   ProvidedTargetGroups: !Not [!Equals [!Ref GatewaysTargetGroups, '']]
   EnableCloudWatch: !Equals [!Ref CloudWatch, true]
-  CreateELB: !Not [!Equals [!Ref ELBType, none]]
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
   GenerateAutoScalingName: !Equals [!Ref AutoScaleGroupName, ""]
+  IsIPv6Enabled: !Not [!Equals [!Ref IPMode, "IPv4"]]
+  IsIPv4Enabled: !Not [!Equals [!Ref IPMode, "IPv6"]]
 Resources:
   ChkpGatewayRole:
     Type: AWS::IAM::Role
@@ -433,33 +425,6 @@ Resources:
       Subscription:
         - Endpoint: !Ref AdminEmail
           Protocol: email
-  ElasticLoadBalancer:
-    Type: AWS::ElasticLoadBalancing::LoadBalancer
-    Condition: CreateELB
-    Properties:
-      CrossZone: true
-      Listeners:
-        - LoadBalancerPort: !Ref ELBPort
-          InstancePort: !Ref ELBPort
-          Protocol: TCP
-      HealthCheck:
-        Target: !Join [':', [TCP, !Ref ELBPort]]
-        HealthyThreshold: 3
-        UnhealthyThreshold: 5
-        Interval: 30
-        Timeout: 5
-      Scheme: !Ref ELBType
-      Subnets: !Ref GatewaysSubnets
-      Policies:
-        - PolicyName: EnableProxyProtocol
-          PolicyType: ProxyProtocolPolicyType
-          Attributes:
-            - Name: ProxyProtocol
-              Value: true
-          InstancePorts:
-            - !Ref ELBPort
-      SecurityGroups:
-        - !Ref ELBSecurityGroup
   PermissiveSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -469,11 +434,18 @@ Resources:
       GroupDescription: Permissive security group.
       VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
+        - !If
+          - IsIPv4Enabled
+          - IpProtocol: -1
+            CidrIp: 0.0.0.0/0
+          - !Ref "AWS::NoValue"
+        - !If
+          - IsIPv6Enabled
+          - IpProtocol: -1
+            CidrIpv6: ::/0
+          - !Ref "AWS::NoValue"
   GatewayGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
-    DependsOn: GatewayLaunchTemplate
     Properties:
       VPCZoneIdentifier: !Ref GatewaysSubnets
       LaunchTemplate:
@@ -482,7 +454,6 @@ Resources:
       AutoScalingGroupName: !If [GenerateAutoScalingName, !Join ["-", [!Ref 'AWS::StackName', GatewayGroup]], !Ref AutoScaleGroupName]
       MinSize: !Ref GatewaysMinSize
       MaxSize: !Ref GatewaysMaxSize
-      LoadBalancerNames: !If [CreateELB, [!Ref ElasticLoadBalancer], !Ref 'AWS::NoValue']
       TargetGroupARNs: !If [ProvidedTargetGroups, !Split [',', !Ref GatewaysTargetGroups], !Ref 'AWS::NoValue']
       HealthCheckGracePeriod: 3600
       HealthCheckType: ELB
@@ -512,7 +483,8 @@ Resources:
       LaunchTemplateData:
         NetworkInterfaces:
           - DeviceIndex: 0
-            AssociatePublicIpAddress: true
+            AssociatePublicIpAddress: !If [IsIPv4Enabled, true, false]
+            Ipv6AddressCount: !If [IsIPv6Enabled, 1, !Ref "AWS::NoValue"]
             Groups:
               - !Ref PermissiveSecurityGroup
         Monitoring:
@@ -521,7 +493,7 @@ Resources:
         ImageId: !GetAtt AMI.Outputs.ImageId
         InstanceType: !Ref GatewayInstanceType
         MetadataOptions:
-           HttpTokens: !If [EnableMetaDataToken, required, optional]
+          HttpTokens: !If [EnableMetaDataToken, required, optional]
         BlockDeviceMappings:
           - DeviceName: '/dev/xvda'
             Ebs:
@@ -540,12 +512,16 @@ Resources:
               - '  - |'
               - '    set -e'
               - !Sub '    admin_shell=${Shell} ; allow_info=${AllowUploadDownload} ; cw=${CloudWatch} ; eic=${EnableInstanceConnect}'
+              - !If
+                - IsIPv6Enabled
+                - !If [IsIPv4Enabled, "    template_name=\"autoscale_dual_stack\"", "    template_name=\"autoscale_ipv6\""]
+                - "    template_name=\"autoscale\""
               - !Join ['', ['    sic="$(echo ', 'Fn::Base64': !Ref GatewaySICKey, ')"']]
               - !Join ['', ['    pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayPasswordHash, ')"']]
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayMaintenancePasswordHash, ')"']]
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref GatewayBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref GatewayVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" installationType=\"autoscale\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260101\" templateName=\"autoscale\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" installationType=\"autoscale\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260316\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   GatewayScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
@@ -593,23 +569,7 @@ Resources:
         - Name: AutoScalingGroupName
           Value: !Ref GatewayGroup
       ComparisonOperator: LessThanThreshold
-  ELBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Condition: CreateELB
-    Properties:
-      GroupDescription: ELB security group.
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          CidrIp: !Ref ELBClients
-          FromPort: !Ref ELBPort
-          ToPort: !Ref ELBPort
 Outputs:
-  URL:
-    Description: The URL of the Proxy.
-    Condition: CreateELB
-    Value: !Join ['', ['http://', !GetAtt ElasticLoadBalancer.DNSName]]
   SecurityGroup:
     Description: The Security Group of the Auto Scaling group.
     Value: !GetAtt PermissiveSecurityGroup.GroupId
-
