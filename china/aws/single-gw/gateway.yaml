@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point Security Gateway into an existing VPC (04012026)
+  Deploys a Check Point Security Gateway into an existing VPC (20260216)
   See sk175207 for Gateway administration guide deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -247,7 +247,7 @@ Parameters:
     AllowedValues:
       - IPv4
       # - IPv6
-      # - DualStack
+      - DualStack
     Default: IPv4
   AllocatePublicAddress:
     Type: String
@@ -298,6 +298,7 @@ Parameters:
       - R81.10-BYOL
       - R81.20-BYOL
       - R82-BYOL
+      - R82.10-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -315,10 +316,10 @@ Parameters:
     AllowedPattern: '[a-zA-Z0-9]{8,}'
     NoEcho: true
   GatewayToken:
-      Description: Follow the instructions in SK180501 to quickly connect this Gateway to Smart-1 Cloud. Paste here the token copied from the Connect Gateway screen in Smart-1 Cloud portal.
-      Type: String
-      AllowedPattern: '(^aHR0cHM6Ly9(.+)|(.*)\s[aHR0cHM6Ly9](.+)|^$)'
-      NoEcho: true
+    Description: Follow the instructions in SK180501 to quickly connect this Gateway to Smart-1 Cloud. Paste here the token copied from the Connect Gateway screen in Smart-1 Cloud portal.
+    Type: String
+    AllowedPattern: '(^aHR0cHM6Ly9(.+)|(.*)\s[aHR0cHM6Ly9](.+)|^$)'
+    NoEcho: true
   GatewayPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD"
       to get the PASSWORD's hash). (optional)
@@ -396,10 +397,13 @@ Conditions:
   EnableCloudWatch: !Equals [!Ref CloudWatch, true]
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
   IsIPv6Enabled: !Not [!Equals [!Ref IPMode, "IPv4"]]
-  EnableIPv4RouteTable: !Condition ProvidedRouteTable
+  IsIPv4Enabled: !Not [!Equals [!Ref IPMode, "IPv6"]]
+  EnableIPv4RouteTable:
+    !And [!Condition IsIPv4Enabled, !Condition ProvidedRouteTable]
   EnableIPv6RouteTable:
     !And [!Condition IsIPv6Enabled, !Condition ProvidedRouteTable]
-  AllocatePublicEIP: !Equals [!Ref AllocatePublicAddress, 'true']
+  AllocatePublicIPv4:
+    !And [!Equals [!Ref AllocatePublicAddress, true], !Condition IsIPv4Enabled]
 Resources:
   GatewayIAMRole:
     Condition: EnableCloudWatch
@@ -410,7 +414,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: ec2.amazonaws.com.cn
+              Service: [ ec2.amazonaws.com.cn ]
             Action: sts:AssumeRole
       Path: /
   GatewayInstanceProfile:
@@ -478,8 +482,11 @@ Resources:
       GroupDescription: Permissive security group.
       VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
+        - !If
+          - IsIPv4Enabled
+          - IpProtocol: -1
+            CidrIp: 0.0.0.0/0
+          - !Ref "AWS::NoValue"
         - !If
           - IsIPv6Enabled
           - IpProtocol: -1
@@ -534,12 +541,12 @@ Resources:
         MetadataOptions:
           HttpTokens: !If [EnableMetaDataToken, required, optional]
         BlockDeviceMappings:
-            - DeviceName: '/dev/xvda'
-              Ebs:
-                Encrypted: !If [EncryptedVolume, true, false]
-                KmsKeyId: !If [EncryptedVolume, !Ref VolumeEncryption, !Ref 'AWS::NoValue']
-                VolumeType: !Ref VolumeType
-                VolumeSize: !Ref VolumeSize
+          - DeviceName: '/dev/xvda'
+            Ebs:
+              Encrypted: !If [EncryptedVolume, true, false]
+              KmsKeyId: !If [EncryptedVolume, !Ref VolumeEncryption, !Ref 'AWS::NoValue']
+              VolumeType: !Ref VolumeType
+              VolumeSize: !Ref VolumeSize
         IamInstanceProfile:
           Name: !If [EnableCloudWatch, !Ref GatewayInstanceProfile, !Ref 'AWS::NoValue']
         UserData:
@@ -554,23 +561,23 @@ Resources:
               - !Sub '    admin_shell=${Shell} ; hostname=${GatewayHostname} ; allow_info=${AllowUploadDownload} ; cw=${CloudWatch} ; ntp1=${NTPPrimary} ; ntp2=${NTPSecondary} ; eic=${EnableInstanceConnect} ; token=''${GatewayToken}'''
               - !If
                 - IsIPv6Enabled
-                - "    template_name=\"gateway_dual_stack\""
+                - !If [IsIPv4Enabled, "    template_name=\"gateway_dual_stack\"", "    template_name=\"gateway_ipv6\""]
                 - "    template_name=\"gateway\""
               - !Join ['', ['    sic="$(echo ', 'Fn::Base64': !Ref GatewaySICKey, ')"']]
               - !Join ['', ['    pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayPasswordHash, ')"']]
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayMaintenancePasswordHash, ')"']]
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref GatewayBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref GatewayVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${token}\"" installationType=\"gateway\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"04012026\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${token}\"" installationType=\"gateway\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   PublicAddress:
     Type: AWS::EC2::EIP
-    Condition: AllocatePublicEIP
+    Condition: AllocatePublicIPv4
     Properties:
       Domain: vpc
   AddressAssoc:
     Type: AWS::EC2::EIPAssociation
-    Condition: AllocatePublicEIP
+    Condition: AllocatePublicIPv4
     DependsOn: GatewayInstance
     Properties:
       NetworkInterfaceId: !Ref ExternalNetworkInterface
@@ -580,21 +587,23 @@ Outputs:
   PublicAddress:
     Description: The public address of the Check Point instance.
     Value: !Ref PublicAddress
-    Condition: AllocatePublicEIP
+    Condition: AllocatePublicIPv4
   PrivateExternalAddress:
+    Condition: IsIPv4Enabled
     Description: The private external address of the Check Point instance.
     Value: !GetAtt ExternalNetworkInterface.PrimaryPrivateIpAddress
   PrivateInternalAddress:
+    Condition: IsIPv4Enabled
     Description: The private internal address of the Check Point instance.
     Value: !GetAtt InternalNetworkInterface.PrimaryPrivateIpAddress
   SSH:
     Description: SSH command to the Check Point instance.
     Value: !Join ['', ['ssh -i ', !Ref KeyName, ' admin@', !Ref PublicAddress]]
-    Condition: AllocatePublicEIP
+    Condition: AllocatePublicIPv4
   URL:
     Description: URL to the portal.
     Value: !Join ['', ['https://', !Ref PublicAddress]]
-    Condition: AllocatePublicEIP
+    Condition: AllocatePublicIPv4
   ManagementName:
     Description: The name that represents the Security Management Server.
     Value: !Ref ManagementServer

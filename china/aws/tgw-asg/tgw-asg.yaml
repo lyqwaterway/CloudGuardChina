@@ -1,6 +1,8 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy an Auto Scaling Group of CloudGuard Security Gateways for Transit Gateway with an optional Management Server into an existing VPC (04012026)
+Description: |
+  Deploy an Auto Scaling Group of CloudGuard Security Gateways for Transit Gateway with an optional Management Server into an existing VPC (20260302).
+  See CloudGuard Network for AWS Auto Scale Group with Transit Gateway deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -147,7 +149,7 @@ Parameters:
   VolumeSize:
     Type: Number
     MinValue: 100
-    Default: 100
+    Default: 200
   VolumeType:
     Description: General Purpose SSD Volume Type
     Type: String
@@ -312,6 +314,7 @@ Parameters:
       - R81.10-BYOL
       - R81.20-BYOL
       - R82-BYOL
+      - R82.10-BYOL
   GatewayPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD" to get the PASSWORD's hash). (optional)
     Type: String
@@ -408,6 +411,15 @@ Parameters:
       - c6i.16xlarge
       - c6i.24xlarge
       - c6i.32xlarge
+      - c6in.large
+      - c6in.xlarge
+      - c6in.2xlarge
+      - c6in.4xlarge
+      - c6in.8xlarge
+      - c6in.12xlarge
+      - c6in.16xlarge
+      - c6in.24xlarge
+      - c6in.32xlarge
       - r5.large
       - r5.xlarge
       - r5.2xlarge
@@ -468,6 +480,7 @@ Parameters:
       - R81.10-BYOL
       - R81.20-BYOL
       - R82-BYOL
+      - R82.10-BYOL
   ManagementPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD" to get the PASSWORD's hash). (optional)
     Type: String
@@ -661,4 +674,4 @@ Rules:
     RuleCondition: !Equals [!Ref ManagementDeploy, 'true']
     Assertions:
       - AssertDescription: "Gateway's netowrk to communicate with the Security Management Server must be provided"
-        Assert: !Not [ !Equals [!Ref GatewaysAddresses, '']]
+        Assert: !Not [!Equals [!Ref GatewaysAddresses, '']]

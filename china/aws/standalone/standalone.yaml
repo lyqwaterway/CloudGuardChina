@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: Deploys either a manually configurable or a Check Point CloudGuard IaaS
-  Security Gateway & Management (Standalone) instance into an existing VPC (04012026)
+  Security Gateway & Management (Standalone) instance into an existing VPC (20260216)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -41,6 +41,7 @@ Metadata:
           - StandaloneBootstrapScript
           - NTPPrimary
           - NTPSecondary
+          - GatewaysAddresses
     ParameterLabels:
       VPC:
         default: VPC
@@ -96,6 +97,8 @@ Metadata:
         default: Secondary NTP server
       AdminCIDR:
         default: Allow SmartConsole connections from these networks
+      GatewaysAddresses:
+        default: Gateways addresses
 Parameters:
   VPC:
     Type: AWS::EC2::VPC::Id
@@ -144,21 +147,6 @@ Parameters:
       - c5d.12xlarge
       - c5d.18xlarge
       - c5d.24xlarge
-      - c6i.large
-      - c6i.xlarge
-      - c6i.2xlarge
-      - c6i.4xlarge
-      - c6i.8xlarge
-      - c6i.12xlarge
-      - c6i.16xlarge
-      - c6i.24xlarge
-      - c6i.32xlarge
-      - c7i-flex.xlarge
-      - c7i-flex.2xlarge
-      - c7i-flex.4xlarge
-      - c7i-flex.8xlarge
-      - c7i-flex.12xlarge
-      - c7i-flex.16xlarge
       - m5.large
       - m5.xlarge
       - m5.2xlarge
@@ -167,16 +155,6 @@ Parameters:
       - m5.12xlarge
       - m5.16xlarge
       - m5.24xlarge
-      - m6a.large
-      - m6a.xlarge
-      - m6a.2xlarge
-      - m6a.4xlarge
-      - m6a.8xlarge
-      - m6a.12xlarge
-      - m6a.16xlarge
-      - m6a.24xlarge
-      - m6a.32xlarge
-      - m6a.48xlarge
       - m6i.large
       - m6i.xlarge
       - m6i.2xlarge
@@ -186,13 +164,15 @@ Parameters:
       - m6i.16xlarge
       - m6i.24xlarge
       - m6i.32xlarge
-      - m8i-flex.large
-      - m8i-flex.xlarge
-      - m8i-flex.2xlarge
-      - m8i-flex.4xlarge
-      - m8i-flex.8xlarge
-      - m8i-flex.12xlarge
-      - m8i-flex.16xlarge
+      - c6i.large
+      - c6i.xlarge
+      - c6i.2xlarge
+      - c6i.4xlarge
+      - c6i.8xlarge
+      - c6i.12xlarge
+      - c6i.16xlarge
+      - c6i.24xlarge
+      - c6i.32xlarge
       - r5.large
       - r5.xlarge
       - r5.2xlarge
@@ -234,6 +214,16 @@ Parameters:
       - r6i.16xlarge
       - r6i.24xlarge
       - r6i.32xlarge
+      - m6a.large
+      - m6a.xlarge
+      - m6a.2xlarge
+      - m6a.4xlarge
+      - m6a.8xlarge
+      - m6a.12xlarge
+      - m6a.16xlarge
+      - m6a.24xlarge
+      - m6a.32xlarge
+      - m6a.48xlarge
     ConstraintDescription: Must be a valid EC2 instance type
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instance.
@@ -251,7 +241,7 @@ Parameters:
     Type: String
     AllowedValues:
       - IPv4
-      # - DualStack
+      - DualStack
     Default: IPv4
   VolumeSize:
     Type: Number
@@ -297,6 +287,7 @@ Parameters:
       - R81.10-BYOL
       - R81.20-BYOL
       - R82-BYOL
+      - R82.10-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -362,6 +353,10 @@ Parameters:
     Description: Allow web, SSH, and graphical clients only from this network to communicate with the Standalone Server (IPv4 or IPv6 CIDR).
     Type: String
     AllowedPattern: '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|[12]?[0-9])|([0-9a-fA-F]{0,4}:){2,7}([0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))$'
+  GatewaysAddresses:
+    Description: Allow gateways only from this network to communicate with the Standalone Server (IPv4 or IPv6 CIDR) (optional).
+    Type: String
+    AllowedPattern: '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|[12]?[0-9])|([0-9a-fA-F]{0,4}:){2,7}([0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))$'
 Conditions:
   ProvidedResourcesTag: !Not [!Equals [!Ref ResourcesTagName, '']]
   EncryptedVolume: !Not [!Equals [!Ref VolumeEncryption, '']]
@@ -370,11 +365,25 @@ Conditions:
   IsBYOL: !Equals [!Select [1, !Split ['-', !Ref StandaloneVersion]], 'BYOL']
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
   IsIPv6Enabled: !Not [!Equals [!Ref IPMode, "IPv4"]]
-  EnableIPv4RouteTable: !Condition ProvidedRouteTable
+  IsIPv4Enabled: !Not [!Equals [!Ref IPMode, "IPv6"]]
+  EnableIPv4RouteTable:
+    !And [!Condition IsIPv4Enabled, !Condition ProvidedRouteTable]
   EnableIPv6RouteTable:
     !And [!Condition IsIPv6Enabled, !Condition ProvidedRouteTable]
-  AllocatePublicIPv4: !Equals [!Ref AllocatePublicAddress, true]
+  AllocatePublicIPv4:
+    !And [!Equals [!Ref AllocatePublicAddress, true], !Condition IsIPv4Enabled]
 Resources:
+  ReadyHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: AllocatePublicIPv4
+    Properties: {}
+  ReadyCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: AllocatePublicIPv4
+    DependsOn: StandaloneInstance
+    Properties:
+      Handle: !Ref ReadyHandle
+      Timeout: 1800
   StandaloneIAMRole:
     Condition: EnableCloudWatch
     Type: AWS::IAM::Role
@@ -384,7 +393,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: ec2.amazonaws.com.cn
+              Service: [ ec2.amazonaws.com.cn ]
             Action: sts:AssumeRole
       Path: /
   StandaloneInstanceProfile:
@@ -449,8 +458,11 @@ Resources:
       GroupDescription: Permissive security group.
       VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
+        - !If
+          - IsIPv4Enabled
+          - IpProtocol: -1
+            CidrIp: 0.0.0.0/0
+          - !Ref "AWS::NoValue"
         - !If
           - IsIPv6Enabled
           - IpProtocol: -1
@@ -513,13 +525,12 @@ Resources:
               - '  - |'
               - '    set -e'
               - !Sub '    admin_shell=${Shell} ; hostname=${StandaloneHostname} ; allow_info=${AllowUploadDownload} ; cw=${CloudWatch} ; ntp1=${NTPPrimary} ; ntp2=${NTPSecondary} ; eic=${EnableInstanceConnect} ; admin_subnet=${AdminCIDR}'
-              - !If [IsIPv6Enabled, '    template_name="standalone_dual_stack"', '    template_name="standalone"']
-              - !If [AllocatePublicIPv4, !Sub '    eip=${AllocatePublicAddress}', '    eip=false']
+              - !If [IsIPv6Enabled, !If [IsIPv4Enabled, '    template_name="standalone_dual_stack"', '    template_name="standalone_ipv6"'], '    template_name="standalone"']
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref StandaloneBootstrapScript, ')"']]
               - !Join ['', ['    pwd_hash="$(echo ', 'Fn::Base64': !Ref StandalonePasswordHash, ')"']]
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref StandaloneMaintenancePasswordHash, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref StandaloneVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" installationType=\"standalone\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"04012026\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" installationType=\"standalone\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   PublicAddress:
     Type: AWS::EC2::EIP
