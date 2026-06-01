@@ -1,17 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Returns a Check Point Amazon Machine ID (20260326)
+Description: Returns a Check Point Amazon Machine ID (20230110)
 Parameters:
   Version:
     Description: Security Gateway or Management Server version
     Type: String
-    Default: R82-BYOL-GW
+    Default: R81.20-BYOL-GW
     AllowedValues:
-    - R81.10-BYOL-MGMT
-    - R81.10-BYOL-GW
-    - R81.20-BYOL-MGMT
-    - R81.20-BYOL-GW
-    - R82-BYOL-MGMT
-    - R82-BYOL-GW
+      - R81.10-BYOL-MGMT
+      - R81.10-BYOL-GW
+      - R81.20-BYOL-MGMT
+      - R81.20-BYOL-GW
+      - R82-BYOL-MGMT
+      - R82-BYOL-GW
+      - R82.10-BYOL-MGMT
+      - R82.10-BYOL-GW
 Mappings:
   ConverterMap:
     R81.10-BYOL-MGMT:
@@ -26,21 +28,30 @@ Mappings:
       Value: R82BYOLMGMT
     R82-BYOL-GW:
       Value: R82BYOLGW
+    R82.10-BYOL-MGMT:
+      Value: R8210BYOLMGMT
+    R82.10-BYOL-GW:
+      Value: R8210BYOLGW
+
   RegionMap:
-    cn-north-1:
-      R8110BYOLGW: ami-0dd3dbb57e9d388f6
-      R8110BYOLMGMT: ami-0218bbe2af0b3d4c7
-      R8120BYOLGW: ami-07da63ec51b0f37b2
-      R8120BYOLMGMT: ami-07c9a4547c2e48445
-      R82BYOLGW: ami-00a6af89c705379e6
-      R82BYOLMGMT: ami-0b0d6371b8bc27c7d
     cn-northwest-1:
-      R8110BYOLGW: ami-07ea06538bbbc4f5e
       R8110BYOLMGMT: ami-064a33bb86b69a7d3
-      R8120BYOLGW: ami-05218154b9aa45ab6
-      R8120BYOLMGMT: ami-0cf32d6b94fd87cc5
-      R82BYOLGW: ami-0aa3165569c350981
-      R82BYOLMGMT: ami-0d08805f54e5726cb
+      R8110BYOLGW: ami-0161cf35c43e9d8d9
+      R8120BYOLMGMT: ami-05f6ac164676ad2ea
+      R8120BYOLGW: ami-09e8bc48223ed6c82
+      R82BYOLMGMT: ami-028c336eda4a8c140
+      R82BYOLGW: ami-09d950940d6b6c89e
+      R8210BYOLMGMT: ami-0dee26cac821a1d6d
+      R8210BYOLGW: ami-02d8cbb4eae126d88
+    cn-north-1:
+      R8110BYOLMGMT: ami-045ed4c9758825acf
+      R8110BYOLGW: ami-081044b236db046b3
+      R8120BYOLMGMT: ami-01afc191b52969818
+      R8120BYOLGW: ami-0a02c6c711aeb5420
+      R82BYOLMGMT: ami-0bc2f99946b19d33b
+      R82BYOLGW: ami-0a803cb54fe007773
+      R8210BYOLMGMT: ami-01c011274c3019fd0
+      R8210BYOLGW: ami-0ebc11fd48e754eeb
 Resources:
   DummyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
