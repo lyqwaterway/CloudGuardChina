@@ -12,6 +12,8 @@ Parameters:
       - R81.20-BYOL-GW
       - R82-BYOL-MGMT
       - R82-BYOL-GW
+      - R82.10-BYOL-MGMT
+      - R82.10-BYOL-GW
 Mappings:
   ConverterMap:
     R81.10-BYOL-MGMT:
@@ -26,22 +28,30 @@ Mappings:
       Value: R82BYOLMGMT
     R82-BYOL-GW:
       Value: R82BYOLGW
+    R82.10-BYOL-MGMT:
+      Value: R8210BYOLMGMT
+    R82.10-BYOL-GW:
+      Value: R8210BYOLGW
 
   RegionMap:
     cn-northwest-1:
       R8110BYOLMGMT: ami-064a33bb86b69a7d3
-      R8110BYOLGW: ami-06e176c827e5c4ca7
-      R8120BYOLMGMT: ami-0cf32d6b94fd87cc5
-      R8120BYOLGW: ami-000a805e697d66b87
-      R82BYOLMGMT: ami-0d08805f54e5726cb
-      R82BYOLGW: ami-0aa3165569c350981
+      R8110BYOLGW: ami-0161cf35c43e9d8d9
+      R8120BYOLMGMT: ami-05f6ac164676ad2ea
+      R8120BYOLGW: ami-09e8bc48223ed6c82
+      R82BYOLMGMT: ami-028c336eda4a8c140
+      R82BYOLGW: ami-09d950940d6b6c89e
+      R8210BYOLMGMT: ami-0dee26cac821a1d6d
+      R8210BYOLGW: ami-02d8cbb4eae126d88
     cn-north-1:
       R8110BYOLMGMT: ami-045ed4c9758825acf
-      R8110BYOLGW: ami-04028fc05932c373f
-      R8120BYOLMGMT: ami-057f2fe0648449168
-      R8120BYOLGW: ami-00d3fd4736380432d
-      R82BYOLMGMT: ami-01e5f75e87e8566b6
-      R82BYOLGW: ami-0e23b21a74123f268
+      R8110BYOLGW: ami-081044b236db046b3
+      R8120BYOLMGMT: ami-01afc191b52969818
+      R8120BYOLGW: ami-0a02c6c711aeb5420
+      R82BYOLMGMT: ami-0bc2f99946b19d33b
+      R82BYOLGW: ami-0a803cb54fe007773
+      R8210BYOLMGMT: ami-01c011274c3019fd0
+      R8210BYOLGW: ami-0ebc11fd48e754eeb
 Resources:
   DummyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
