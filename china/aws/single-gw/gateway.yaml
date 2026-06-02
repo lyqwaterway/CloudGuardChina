@@ -80,6 +80,8 @@ Mappings:
       NBG: ap-southeast-1-sin-1
     ap-southeast-4-mel-1a:
       NBG: ap-southeast-4-mel-1
+    cn-north-1-pkx-1a:
+      NBG: cn-north-1-pkx-1
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
