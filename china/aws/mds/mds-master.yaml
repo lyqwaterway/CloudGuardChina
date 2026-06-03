@@ -409,7 +409,7 @@ Resources:
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/vpc.yaml
+      TemplateURL: https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/utils/vpc.yaml
       Parameters:
         AvailabilityZones: !Ref AvailabilityZone
         NumberOfAZs: 1
@@ -420,7 +420,7 @@ Resources:
   MDSStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/management/mds.yaml
+      TemplateURL: https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/management/mds.yaml
       Parameters:
         MDSVersion: !Ref MDSVersion
         MDSInstanceType: !Ref MDSInstanceType

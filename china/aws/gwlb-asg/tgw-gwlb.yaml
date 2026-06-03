@@ -973,7 +973,7 @@ Resources:
   GWLBStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/gwlb/gwlb.yaml
+      TemplateURL: https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/gwlb/gwlb.yaml
       Parameters:
         VPC: !Ref VPC
         AutoScaleGroupName: !If [GenerateAutoScalingName, !Join ["-", [!Ref 'AWS::StackName', GatewayGroup]], !Ref AutoScaleGroupName]

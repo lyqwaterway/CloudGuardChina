@@ -476,7 +476,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL:
-        !If [IsIPv6Enabled, https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/vpc-ipv6.yaml, https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/vpc.yaml]
+        !If [IsIPv6Enabled, https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/utils/vpc-ipv6.yaml, https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/utils/vpc.yaml]
       Parameters:
         AvailabilityZones: !Join [',', !Ref AvailabilityZones]
         NumberOfAZs: !Ref NumberOfAZs
@@ -493,7 +493,7 @@ Resources:
   AutoScaleStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/autoscale/autoscale.yaml
+      TemplateURL: https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/autoscale/autoscale.yaml
       Parameters:
         VPC: !GetAtt VPCStack.Outputs.VPCID
         GatewaysSubnets: !Join

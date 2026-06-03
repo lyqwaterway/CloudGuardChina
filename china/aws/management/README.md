@@ -14,7 +14,7 @@
                 Deploys and configures a Security Management Server.<br/><br/>For more details, refer to <a href="https://supportcenter.checkpoint.com/supportcenter/portal?eventSubmit_doGoviewsolutiondetails=&solutionid=sk130372">sk130372</a>.
             </td>
             <td width="40%">Deploys a Security Management Server into an existing VPC.</td>
-            <td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/review?templateURL=https://cgns-china-cft.s3.us-east-1.amazonaws.com/management/management.yaml&stackName=Check-Point-Management"><img src="https://sc1.checkpoint.com/sc/SolutionsStatics/NEW_SK_NOID1460631718185/launch1604140412.png"/></a></td>
+            <td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/review?templateURL=https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/management/management.yaml&stackName=Check-Point-Management"><img src="https://sc1.checkpoint.com/sc/SolutionsStatics/NEW_SK_NOID1460631718185/launch1604140412.png"/></a></td>
         </tr>
     </tbody>
 </table>

@@ -14,11 +14,11 @@
            Deploys and configured the Security Gateways as an AWS Auto Scaling group configured for Transit Gateway.<br/><br/> For more details, refer to <a href="https://sc1.checkpoint.com/documents/IaaS/WebAdminGuides/EN/CP_CloudGuard_AWS_Transit_Gateway/Default.htm" >AWS Transit Gateway R80.10 and above Deployment Guide</a>.
             </td>
             <td width="40%">Creates a new VPC and deploys an Auto Scaling group of Security Gateways configured for Transit Gateway into it, and an optional, preconfigured Security Management Server to manage them.</td>
-            <td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/review?templateURL=https://cgns-china-cft.s3.us-east-1.amazonaws.com/autoscale/tgw-asg-master.yaml&stackName=Check-Point-TGW-AutoScaling"><img src="https://sc1.checkpoint.com/sc/SolutionsStatics/NEW_SK_NOID1460631718185/launch1604140412.png"/></a></td>
+            <td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/review?templateURL=https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/autoscale/tgw-asg-master.yaml&stackName=Check-Point-TGW-AutoScaling"><img src="https://sc1.checkpoint.com/sc/SolutionsStatics/NEW_SK_NOID1460631718185/launch1604140412.png"/></a></td>
         </tr>
         <tr>
             <td width="40%">Deploys an Auto Scaling group of Security Gateways configured for Transit Gateway into an existing VPC, and an optional, preconfigured Security Management Server to manage them.	</td>
-            <td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/review?templateURL=https://cgns-china-cft.s3.us-east-1.amazonaws.com/autoscale/tgw-asg.yaml&stackName=Check-Point-TGW-AutoScaling"><img src="https://sc1.checkpoint.com/sc/SolutionsStatics/NEW_SK_NOID1460631718185/launch1604140412.png"/></a></td>
+            <td><a href="https://console.amazonaws.cn/cloudformation/home#/stacks/create/review?templateURL=https://cf-templates-w00qkcfuftkc-cn-north-1.s3.cn-north-1.amazonaws.com.cn/autoscale/tgw-asg.yaml&stackName=Check-Point-TGW-AutoScaling"><img src="https://sc1.checkpoint.com/sc/SolutionsStatics/NEW_SK_NOID1460631718185/launch1604140412.png"/></a></td>
         </tr>
     </tbody>
 </table>
