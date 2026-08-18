@@ -1369,7 +1369,7 @@
     "loadBalancerSetupId": "[resourceId(variables('lbRGName'), 'Microsoft.Resources/deployments', 'loadBalancerSetup')]",
     "vnetRGName": "[if(equals(parameters('vnetNewOrExisting'), 'new'), resourceGroup().name, parameters('virtualNetworkExistingRGName'))]",
     "vnetName": "[if(equals(parameters('vnetNewOrExisting'), 'new'), parameters('virtualNetworkName'), parameters('virtualNetworkName'))]",
-    "vnetID": "[if(equals(parameters('vnetNewOrExisting'), 'new'), resourceId(variables('vnetRGName'),'Microsoft.Resources/deployments', 'networkNewSetup'), resourceId(variables('vnetRGName'),'Microsoft.Resources/deployments', 'networkExistingSetup'))]",
+    "vnetID": "[if(equals(parameters('vnetNewOrExisting'), 'new'), resourceId(variables('vnetRGName'),'Microsoft.Resources/deployments', 'networkNewSetup'), resourceId('Microsoft.Resources/deployments', 'networkExistingSetup'))]",
     "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
     "customImageId": "[variables('imageReferenceCustomUri').id]",
     "availabilityZonesLocations": [
@@ -1401,7 +1401,7 @@
     "monitoringMetricsPublisher": "[concat('/subscriptions/', parameters('subscriptionId'), '/providers/Microsoft.Authorization/roleDefinitions/', '3913510d-42f4-4e42-8a64-420c390055eb')]",
     "identity": "[json('{\"type\": \"SystemAssigned\"}')]",
     "NewNsgReference": {
-      "id": "[resourceId(variables('vnetRGName'),'Microsoft.Network/networkSecurityGroups', parameters('NewNsgName'))]"
+      "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('NewNsgName'))]"
     }
   },
   "resources": [
@@ -1487,7 +1487,6 @@
       "name": "networkExistingSetup",
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2020-06-01",
-      "resourceGroup": "[variables('vnetRGName')]",
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -1624,7 +1623,7 @@
       "location": "[variables('location')]",
       "identity": "[if(equals(variables('customMetrics'), 'yes'), variables('identity'), json('null'))]",
       "zones": "[if(and(contains(variables('availabilityZonesLocations'), variables('location')), greater(parameters('availabilityZonesNum'), 0)), variables('availabilityZonesProperty'), json('null'))]",
-      "tags": "[union(variables('vmssTags'),if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachineScaleSets'), parameters('tagsByResource')['Microsoft.Compute/virtualMachineScaleSets'], json('{}')))]",
+      "tags": "[union(variables('vmssTags'),if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachineScaleSets'), parameters('tagsByResource')['Microsoft.Compute/virtualMachineScaleSets'], json('{}')),json('{\"LegacyVMNVA\": \"\"}'))]",
       "dependsOn": [
         "[variables('vnetID')]",
         "[variables('loadBalancerSetupId')]",

@@ -9,6 +9,16 @@
       },
       "defaultValue": "[resourceGroup().location]"
     },
+    "extendedZone": {
+      "type": "string",
+      "allowedValues": [
+        "None"
+      ],
+      "defaultValue": "None",
+      "metadata": {
+        "description": "Deploy in Azure Extended Zone for ultra-low latency edge computing. Select 'losangeles' for Los Angeles Extended Zone, 'perth' for Perth Extended Zone, or 'None' for standard Azure region deployment."
+      }
+    },
     "cloudGuardVersion": {
       "type": "string",
       "allowedValues": [
@@ -384,6 +394,14 @@
     "templateName": "ha",
     "templateVersion": "20240904",
     "location": "[parameters('location')]",
+    "extendedZoneRegionMap": {
+    },
+    "isExtendedZoneValid": "[if(equals(parameters('extendedZone'), 'None'), bool('true'), contains(variables('extendedZoneRegionMap')[parameters('extendedZone')], variables('location')))]",
+    "isExtendedZoneFeatureCompatible": "[not(equals(parameters('publicIPPrefix'), 'yes'))]",
+    "isExtendedZoneVersionSupported": "[not(equals(variables('osVersion'), 'R8110'))]",
+    "isExtendedZoneDiskSupported": "[equals(parameters('diskType'), 'Premium_LRS')]",
+    "selectedZone": "[if(and(not(equals(parameters('extendedZone'), 'None')), variables('isExtendedZoneValid'), variables('isExtendedZoneFeatureCompatible'), variables('isExtendedZoneVersionSupported'), variables('isExtendedZoneDiskSupported')), parameters('extendedZone'), 'None')]",
+    "extendedLocation": "[if(equals(variables('selectedZone'), 'None'), json('null'), createObject('name', variables('selectedZone'), 'type', 'EdgeZone'))]",
     "elbPublicIPName": "frontend-lb-address",
     "haPublicIPName": "[parameters('vmName')]",
     "offers": {
@@ -1337,7 +1355,7 @@
     "availabilitySetProperty": {
       "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
     },
-    "useAZ": "[equals(parameters('availabilityZonesChoice'), 'Yes')]",
+    "useAZ": "[and(equals(parameters('extendedZone'), 'None'), equals(parameters('availabilityZonesChoice'), 'Yes'))]",
     "customMetrics": "[parameters('customMetrics')]",
     "emptyString": "none",
     "ipPrefixNewName": "[concat(parameters('vmName'), '-ipprefix')]",
@@ -1472,7 +1490,7 @@
       }
     },
     {
-      "condition": "[equals(parameters('storageAccountDeployMode'), 'New')]",
+      "condition": "[and(equals(parameters('storageAccountDeployMode'), 'New'), equals(parameters('extendedZone'), 'None'))]",
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('storageAccountName')]",
       "apiVersion": "2022-09-01",
@@ -1507,6 +1525,9 @@
         "parameters": {
           "location": {
             "value": "[variables('location')]"
+          },
+          "extendedLocation": {
+            "value": "[variables('extendedLocation')]"
           },
           "virtualNetworkName": {
             "value": "[parameters('virtualNetworkName')]"
@@ -1553,6 +1574,9 @@
           "location": {
             "value": "[variables('location')]"
           },
+          "extendedLocation": {
+            "value": "[variables('extendedLocation')]"
+          },
           "virtualNetworkName": {
             "value": "[parameters('virtualNetworkName')]"
           },
@@ -1573,7 +1597,7 @@
     },
     {
       "type": "Microsoft.Compute/availabilitySets",
-      "condition": "[not(variables('useAZ'))]",
+      "condition": "[and(not(variables('useAZ')), equals(parameters('extendedZone'), 'None'))]",
       "apiVersion": "2020-06-01",
       "location": "[variables('location')]",
       "name": "[concat(variables('availabilitySetName'))]",
@@ -1592,6 +1616,7 @@
         "[variables('prefixDependsOn')]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[variables('elbPublicIPName')]",
       "sku": {
         "name": "Standard"
@@ -1613,6 +1638,7 @@
         "[variables('prefixDependsOn')]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[concat(parameters('vmName'), copyIndex(1))]",
       "sku": {
         "name": "Standard"
@@ -1638,6 +1664,7 @@
         "[variables('prefixDependsOn')]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[parameters('vmName')]",
       "sku": {
         "name": "Standard"
@@ -1659,6 +1686,7 @@
         "[variables('prefixDependsOn')]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[variables('Vip_Names')[copyIndex()]]",
       "sku": {
         "name": "Standard"
@@ -1687,12 +1715,13 @@
         "[variables('haPublicIPId')]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[concat(parameters('vmName'), '1-', variables('nic1Name'))]",
       "properties": {
         "primary": true,
         "enableIPForwarding": true,
         "enableAcceleratedNetworking": true,
-        "networkSecurityGroup": "[if(parameters('deployNewNSG') , variables('NewNsgReference') , parameters('ExistingNSG'))]",
+        "networkSecurityGroup": "[if(parameters('deployNewNSG'), variables('NewNsgReference'), parameters('ExistingNSG'))]",
         "ipConfigurations": "[union(variables('DefaultIpAddresses'),variables('Vips'))]"
       },
       "tags": "[ if(contains(parameters('tagsByResource'), 'Microsoft.Network/networkInterfaces'), parameters('tagsByResource')['Microsoft.Network/networkInterfaces'], json('{}')) ]"
@@ -1706,12 +1735,13 @@
         "[variables('gwPublicIPIds')[1]]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[concat(parameters('vmName'), '2-', variables('nic1Name'))]",
       "properties": {
         "primary": true,
         "enableIPForwarding": true,
         "enableAcceleratedNetworking": true,
-        "networkSecurityGroup": "[if(parameters('deployNewNSG') , variables('NewNsgReference') , parameters('ExistingNSG'))]",
+        "networkSecurityGroup": "[if(parameters('deployNewNSG'), variables('NewNsgReference'), parameters('ExistingNSG'))]",
         "ipConfigurations": [
           {
             "name": "member-ip",
@@ -1744,6 +1774,7 @@
         "[variables('ilbId')]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[concat(parameters('vmName'), copyIndex(1), '-', variables('nic2Name'))]",
       "copy": {
         "name": "internalNicCopy",
@@ -1804,8 +1835,9 @@
         "[resourceId('Microsoft.Compute/images/', variables('customImage'))]"
       ],
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "name": "[concat(parameters('vmName'), copyIndex(1))]",
-      "zones": "[if(variables('useAZ'), if(greater(length(parameters('availabilityZones')), 0), array(parameters('availabilityZones')[mod(copyIndex(), length(parameters('availabilityZones')))]), array(string(add(copyIndex(), 1)))), json('null'))]",
+      "zones": "[if(and(variables('useAZ'), equals(parameters('extendedZone'), 'None')), if(greater(length(parameters('availabilityZones')), 0), array(parameters('availabilityZones')[mod(copyIndex(), length(parameters('availabilityZones')))]), array(string(add(copyIndex(), 1)))), json('null'))]",
       "copy": {
         "name": "virtualMachineCopy",
         "count": "[variables('count')]"
@@ -1814,7 +1846,7 @@
       "identity": "[if(equals(parameters('managedSystemAssigned'), 'yes'), variables('identity'), json('null'))]",
       "properties": {
         "UserData": "[base64(concat(variables('customData')[copyIndex()], 'vnet=\"', if(equals(parameters('vnetNewOrExisting'), 'new'), reference('networkNewSetup').outputs.vnetAddressPrefixes.value[0], reference('networkExistingSetup').outputs.vnetAddressPrefixes.value[0]), '\"', '\n'))]",
-        "availabilitySet": "[if(not(variables('useAZ')), variables('availabilitySetProperty'), json('null'))]",
+        "availabilitySet": "[if(and(not(variables('useAZ')), equals(parameters('extendedZone'), 'None')), variables('availabilitySetProperty'), json('null'))]",
         "diagnosticsProfile": {
           "bootDiagnostics": "[if(equals(parameters('storageAccountDeployMode'), 'None'), createObject('enabled', false()), if(equals(parameters('storageAccountDeployMode'), 'Managed'), createObject('enabled', true()), createObject('enabled', true(), 'storageUri', if(equals(parameters('storageAccountDeployMode'), 'New'), reference(resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2025-06-01').primaryEndpoints.blob, reference(parameters('existingStorageAccountId'), '2023-05-01').primaryEndpoints.blob))))]"
         },
@@ -1857,7 +1889,7 @@
           }
         }
       },
-      "tags": "[ if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}')) ]"
+      "tags": "[union(if(contains(parameters('tagsByResource'), 'Microsoft.Compute/virtualMachines'), parameters('tagsByResource')['Microsoft.Compute/virtualMachines'], json('{}')), json('{\"LegacyVMNVA\": \"\"}'))]"
     },
     {
       "type": "Microsoft.Network/loadBalancers",
@@ -1867,6 +1899,7 @@
       ],
       "name": "[variables('elbName')]",
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "sku": {
         "name": "Standard"
       },
@@ -1972,6 +2005,7 @@
       ],
       "name": "[variables('ilbName')]",
       "location": "[variables('location')]",
+      "extendedLocation": "[if(empty(variables('extendedLocation')), null(), variables('extendedLocation'))]",
       "sku": {
         "name": "Standard"
       },
