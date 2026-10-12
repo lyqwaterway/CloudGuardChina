@@ -1330,7 +1330,7 @@
     "publicIPAddressId": "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
     "bootstrapScript64": "[base64(parameters('bootstrapScript'))]",
     "allowUploadDownload": "[parameters('allowDownloadFromUploadToCheckPoint')]",
-    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/',parameters('_artifactsLocation'))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/lyqwaterway/CloudGuardChina/testarm/china/azure/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/',parameters('_artifactsLocation'))]",
     "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
     "networkSetupURLDualstack": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-2-subnet-dualstack-new.json', parameters('_artifactsLocationSasToken')))]",
     "sicKey": "[parameters('sicKey')]",

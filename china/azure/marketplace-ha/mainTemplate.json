@@ -1350,7 +1350,7 @@
     "count": 2,
     "bootstrapScript64": "[base64(parameters('bootstrapScript'))]",
     "allowUploadDownload": "[parameters('allowDownloadFromUploadToCheckPoint')]",
-    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/',parameters('_artifactsLocation'))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/lyqwaterway/CloudGuardChina/testarm/china/azure/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/',parameters('_artifactsLocation'))]",
     "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-2-subnet-ha2-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
     "ExsitingNsgRoleAssignmentURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/existing-nsg-RoleAssignment', '.json'))]",
     "sicKey": "[parameters('sicKey')]",

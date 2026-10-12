@@ -1522,7 +1522,7 @@
     "sicKey": "[parameters('sicKey')]",
     "installationType": "vmss",
     "upgrading": "[equals(parameters('upgrading'), 'yes')]",
-    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/',parameters('_artifactsLocation'))]",
+    "_artifactsLocation": "[if(contains(parameters('_artifactsLocation'),'raw.githubusercontent.com/lyqwaterway/CloudGuardChina/testarm/china/azure/marketplace'),'https://raw.githubusercontent.com/CheckPointSW/CloudGuardIaaS/master/china/azure/',parameters('_artifactsLocation'))]",
     "networkSetupURL": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-2-subnet-ha-', parameters('vnetNewOrExisting'), '.json', parameters('_artifactsLocationSasToken')))]",
     "networkSetupURLDualstack": "[uri(variables('_artifactsLocation'), concat('nestedtemplates/vnet-2-subnet-dualstack-new.json', parameters('_artifactsLocationSasToken')))]",
     "networkNewDeploymentName": "[if(parameters('enableIpv6'), 'networkNewSetupDualstack', 'networkNewSetup')]",
