@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point Cluster into an existing VPC (20260507).
+  Deploys a Check Point Cluster into an existing VPC (20261008).
   See CloudGuard Network for AWS Cross Availability Zone Cluster Deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -47,6 +47,7 @@ Metadata:
           - GatewayBootstrapScript
           - NTPPrimary
           - NTPSecondary
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -112,6 +113,8 @@ Metadata:
         default: Primary NTP server
       NTPSecondary:
         default: Secondary NTP server
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   VPC:
     Description: Select an existing VPC.
@@ -311,6 +314,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -392,11 +396,17 @@ Parameters:
     Default: 0.pool.ntp.org
     AllowedPattern: '^[\.a-zA-Z0-9\-]*$'
   ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. When supplied, the stack will NOT apply the aws-apn-id PRM tag to the existing Security Group; tag it externally if revenue attribution is required. (optional)
     Type: String
     Default: ''
     AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
     ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   CreateSecurityGroup: !Equals [!Ref ExistingSecurityGroup, '']
   ProvidedRouteTable: !Not [!Equals [!Ref InternalRouteTable, '']]
@@ -407,6 +417,7 @@ Conditions:
   EmptyHostName: !Equals [!Ref GatewayHostname, '']
   EnableCloudWatch: !Equals [!Ref CloudWatch, true]
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
+  UseCustomAmi: !Not [!Equals [!Ref CustomAmiId, '']]
 Resources:
   ClusterRole:
     Condition: CreateRole
@@ -448,6 +459,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - PermissiveSecurityGroup
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   MemberAExternalInterface:
     Type: AWS::EC2::NetworkInterface
     Properties:
@@ -463,6 +476,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - Member_A_ExternalInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   MemberBExternalInterface:
     Type: AWS::EC2::NetworkInterface
     Properties:
@@ -478,6 +493,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - Member_B_ExternalInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   MemberAInternalInterface:
     Type: AWS::EC2::NetworkInterface
     Properties:
@@ -492,6 +509,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - Member_A_InternalInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   MemberBInternalInterface:
     Type: AWS::EC2::NetworkInterface
     Properties:
@@ -506,6 +525,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - Member_B_InternalInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   InternalDefaultRoute:
     Type: AWS::EC2::Route
     Condition: ProvidedRouteTable
@@ -529,16 +550,25 @@ Resources:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   MemberAPublicAddress:
     Type: AWS::EC2::EIP
     Condition: AllocateAddress
     Properties:
       Domain: vpc
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   MemberBPublicAddress:
     Type: AWS::EC2::EIP
     Condition: AllocateAddress
     Properties:
       Domain: vpc
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   ClusterAddressAssoc:
     Type: AWS::EC2::EIPAssociation
     DependsOn: MemberAInstance
@@ -573,6 +603,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join ['-', [!Ref GatewayName, Member-A]]
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         - Key: x-chkp-member-ips
           Value: !Join
             - ':'
@@ -595,6 +627,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join ['-', [!Ref GatewayName, Member-B]]
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         - Key: x-chkp-member-ips
           Value: !Join
             - ':'
@@ -609,14 +643,24 @@ Resources:
   MemberAGatewayLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: aws-apn-id
+              Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: volume
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         NetworkInterfaces:
           - DeviceIndex: 0
             NetworkInterfaceId: !Ref MemberAExternalInterface
           - DeviceIndex: 1
             NetworkInterfaceId: !Ref MemberAInternalInterface
         KeyName: !Ref KeyName
-        ImageId: !GetAtt AMI.Outputs.ImageId
+        ImageId: !If [UseCustomAmi, !Ref CustomAmiId, !GetAtt AMI.Outputs.ImageId]
         InstanceType: !Ref GatewayInstanceType
         MetadataOptions:
           HttpTokens: !If [EnableMetaDataToken, required, optional]
@@ -650,19 +694,29 @@ Resources:
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayMaintenancePasswordHash, ')"']]
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref GatewayBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref GatewayVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${tokenA}\"" installationType=\"cross-az-cluster\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"cross_az_cluster\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" elasticIp=\"${eip}\" otherMemberIp=\"${other_member_ip}\" clusterIp=\"${cluster_ip}\" secondaryIp=\"${secondary_ip}\" otherMemberPrivateClusterIp=\"${remote_secondary_ip}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${tokenA}\"" installationType=\"cross-az-cluster\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20261008\" templateName=\"cross_az_cluster\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" elasticIp=\"${eip}\" otherMemberIp=\"${other_member_ip}\" clusterIp=\"${cluster_ip}\" secondaryIp=\"${secondary_ip}\" otherMemberPrivateClusterIp=\"${remote_secondary_ip}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   MemberBGatewayLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: aws-apn-id
+              Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: volume
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         NetworkInterfaces:
           - DeviceIndex: 0
             NetworkInterfaceId: !Ref MemberBExternalInterface
           - DeviceIndex: 1
             NetworkInterfaceId: !Ref MemberBInternalInterface
         KeyName: !Ref KeyName
-        ImageId: !GetAtt AMI.Outputs.ImageId
+        ImageId: !If [UseCustomAmi, !Ref CustomAmiId, !GetAtt AMI.Outputs.ImageId]
         InstanceType: !Ref GatewayInstanceType
         MetadataOptions:
           HttpTokens: !If [EnableMetaDataToken, required, optional]
@@ -696,9 +750,12 @@ Resources:
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayMaintenancePasswordHash, ')"']]
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref GatewayBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref GatewayVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${tokenB}\"" installationType=\"cross-az-cluster\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"cross_az_cluster\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" elasticIp=\"${eip}\" otherMemberIp=\"${other_member_ip}\" clusterIp=\"${cluster_ip}\" secondaryIp=\"${secondary_ip}\" otherMemberPrivateClusterIp=\"${remote_secondary_ip}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${tokenB}\"" installationType=\"cross-az-cluster\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20261008\" templateName=\"cross_az_cluster\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" elasticIp=\"${eip}\" otherMemberIp=\"${other_member_ip}\" clusterIp=\"${cluster_ip}\" secondaryIp=\"${secondary_ip}\" otherMemberPrivateClusterIp=\"${remote_secondary_ip}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
 Outputs:
+  ProductCode:
+    Description: PRM product code resolved from GatewayVersion. Re-exposed so wrapper templates can tag their own resources via !GetAtt ClusterStack.Outputs.ProductCode.
+    Value: !GetAtt AMI.Outputs.ProductCode
   ClusterPublicAddress:
     Description: The public address of the cluster.
     Value: !Ref ClusterPublicAddress

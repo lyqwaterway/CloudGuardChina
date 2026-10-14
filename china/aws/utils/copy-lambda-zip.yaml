@@ -1,5 +1,6 @@
+---
 AWSTemplateFormatVersion: 2010-09-09
-Description: Create an S3 bucket in the same region as the stack, and copy a zip of a Lambda from remote bucket to it (20250617)
+Description: Create an S3 bucket in the same region as the stack, and copy a zip of a Lambda from remote bucket to it (20261008)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -73,7 +74,7 @@ Resources:
     Properties:
       Description: Copies objects from a source S3 bucket to a destination.
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.14
       Role: !GetAtt CopyZipsRole.Arn
       Timeout: 240
       Code:

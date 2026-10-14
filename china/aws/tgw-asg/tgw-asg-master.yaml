@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploy an Auto Scaling Group of CloudGuard Security Gateways for Transit Gateway with an optional Management Server in a new VPC (20260507).
+  Deploy an Auto Scaling Group of CloudGuard Security Gateways for Transit Gateway with an optional Management Server in a new VPC (20261008).
   See CloudGuard Network for AWS Auto Scale Group with Transit Gateway deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -21,7 +21,6 @@ Metadata:
       - Label:
           default: Advanced Settings
         Parameters:
-          - ExistingSecurityGroup
           - VPCCIDR
           - PublicSubnet1CIDR
           - PublicSubnet2CIDR
@@ -57,6 +56,7 @@ Metadata:
           - ControlGatewayOverPrivateOrPublicAddress
           - ManagementServer
           - ConfigurationTemplate
+          - CustomAmiId
     ParameterLabels:
       AvailabilityZones:
         default: Availability Zones
@@ -140,8 +140,8 @@ Metadata:
         default: Configuration template
       AutoScaleGroupName:
         default: Auto Scale Group name
-      ExistingSecurityGroup:
-        default: Existing Security Group (optional)
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   AvailabilityZones:
     Description: List of Availability Zones (AZs) to use for the subnets in the VPC. Select at least two.
@@ -364,6 +364,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   GatewayPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD" to get the PASSWORD's hash). (optional)
     Type: String
@@ -521,6 +522,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   ManagementPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD" to get the PASSWORD's hash). (optional)
     Type: String
@@ -592,12 +594,12 @@ Parameters:
     Type: String
     Default: ""
     MaxLength: 100
-  ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
     Type: String
     Default: ''
-    AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
-    ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   4AZs: !Equals [!Ref NumberOfAZs, 4]
   3AZs: !Or [!Equals [!Ref NumberOfAZs, 3], !Condition 4AZs]
@@ -617,6 +619,7 @@ Resources:
         PublicSubnet3CIDR: !Ref PublicSubnet3CIDR
         PublicSubnet4CIDR: !Ref PublicSubnet4CIDR
         CreatePrivateSubnets: false
+        Version: !Join ['-', [!Ref GatewayVersion, GW]]
   MainStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -663,7 +666,7 @@ Resources:
         ControlGatewayOverPrivateOrPublicAddress: !Ref ControlGatewayOverPrivateOrPublicAddress
         ManagementServer: !Ref ManagementServer
         ConfigurationTemplate: !Ref ConfigurationTemplate
-        ExistingSecurityGroup: !Ref ExistingSecurityGroup
+        CustomAmiId: !Ref CustomAmiId
 Outputs:
   ManagementName:
     Description: The name that represents the Security Management Server.

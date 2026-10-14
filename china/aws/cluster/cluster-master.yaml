@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploy a Check Point Cluster in a new VPC (20260507).
+  Deploy a Check Point Cluster in a new VPC (20261008).
   See CloudGuard Network for AWS Single Availability Zone Cluster Deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -17,7 +17,6 @@ Metadata:
       - Label:
           default: Advanced Settings
         Parameters:
-          - ExistingSecurityGroup
           - VPCCIDR
           - PublicSubnetCIDR
           - PrivateSubnetCIDR
@@ -42,9 +41,8 @@ Metadata:
           - GatewayBootstrapScript
           - NTPPrimary
           - NTPSecondary
+          - CustomAmiId
     ParameterLabels:
-      ExistingSecurityGroup:
-        default: Existing Security Group (optional)
       VPCCIDR:
         default: VPC CIDR
       AvailabilityZone:
@@ -103,6 +101,8 @@ Metadata:
         default: Primary NTP server
       NTPSecondary:
         default: Secondary NTP server
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   AvailabilityZone:
     Description: The availability zone in which to deploy the cluster. Pick a regional AZ (e.g. ap-southeast-2a) or a Local Zone (e.g. ap-southeast-2-per-1a) .
@@ -296,6 +296,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -375,12 +376,12 @@ Parameters:
     Type: String
     Default: 0.pool.ntp.org
     AllowedPattern: '^[\.a-zA-Z0-9\-]*$'
-  ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
     Type: String
     Default: ''
-    AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
-    ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   AllocateAddress: !Equals [!Ref AllocatePublicAddress, true]
 Resources:
@@ -394,6 +395,7 @@ Resources:
         VPCCIDR: !Ref VPCCIDR
         PublicSubnet1CIDR: !Ref PublicSubnetCIDR
         PrivateSubnet1CIDR: !Ref PrivateSubnetCIDR
+        Version: !Join ['-', [!Ref GatewayVersion, GW]]
   InternalRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -401,6 +403,8 @@ Resources:
       Tags:
         - Key: Name
           Value: Private Subnets Route Table
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt VPCStack.Outputs.ProductCode}]
   ClusterStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -436,7 +440,7 @@ Resources:
         GatewayBootstrapScript: !Ref GatewayBootstrapScript
         NTPPrimary: !Ref NTPPrimary
         NTPSecondary: !Ref NTPSecondary
-        ExistingSecurityGroup: !Ref ExistingSecurityGroup
+        CustomAmiId: !Ref CustomAmiId
 Outputs:
   ClusterPublicAddress:
     Description: The public address of the cluster.

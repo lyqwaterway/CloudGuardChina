@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploy a Gateway Load Balancer, Check Point CloudGuard IaaS Security Gateway Auto Scaling Group, and optionally a Security Management Server, in a new VPC  (20260507).
+  Deploy a Gateway Load Balancer, Check Point CloudGuard IaaS Security Gateway Auto Scaling Group, and optionally a Security Management Server, in a new VPC  (20261008).
   See CloudGuard Network for AWS Gateway Load Balancer Auto Scaling Group deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -57,6 +57,7 @@ Metadata:
           - ManagementMaintenancePasswordHash
           - GatewaysPolicy
           - GatewayManagement
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -142,6 +143,8 @@ Metadata:
         default: Auto Scale Group name
       ExistingSecurityGroup:
         default: Existing Security Group (optional)
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   VPC:
     Description: Select an existing VPC.
@@ -380,6 +383,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   GatewayPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD" to get the PASSWORD's hash). (optional)
     Type: String
@@ -396,7 +400,7 @@ Parameters:
     Description: The Secure Internal Communication key creates trusted connections between Check Point components. Choose a random string consisting of at least 8 alphanumeric characters.
     Type: String
     AllowedPattern: '^[a-zA-Z0-9]{8,}$'
-    ConstraintDescription: Secure Internal Communication acti.vation key should contain only alpha numeric characters and be at least 8 characters long.
+    ConstraintDescription: Secure Internal Communication activation key should contain only alpha numeric characters and be at least 8 characters long.
     NoEcho: true
   ControlGatewayOverPrivateOrPublicAddress:
     Description: Determines if the gateways are provisioned using their private or public address.
@@ -552,6 +556,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   ManagementPasswordHash:
     Description: Admin user's password hash (use command "openssl passwd -6 PASSWORD" to get the PASSWORD's hash). (optional)
     Type: String
@@ -590,17 +595,33 @@ Parameters:
     Default: ""
     MaxLength: 100
   ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. When supplied, the stack will NOT apply the aws-apn-id PRM tag to the existing Security Group; tag it externally if revenue attribution is required. (optional)
     Type: String
     Default: ''
     AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
     ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   DeployManagement: !Equals [!Ref ManagementDeploy, true]
   VolumeEncryption: !Equals [!Ref EnableVolumeEncryption, true]
   GenerateAutoScalingName: !Equals [!Ref AutoScaleGroupName, ""]
   IsIPv6Enabled: !Not [!Equals [!Ref IPMode, "IPv4"]]
 Resources:
+  AMI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/amis.yaml
+      Parameters:
+        Version: !Join ['-', [!Ref GatewayVersion, GW]]
+        # This nested stack is used only for Outputs.ProductCode (aws-apn-id
+        # tagging); the ImageId output is never read here. Suppress it so a
+        # missing marketplace RegionMap entry cannot fail this stack.
+        ResolveImageId: 'false'
   GatewayLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -616,6 +637,8 @@ Resources:
           Value: !Ref ManagementServer
         - Key: x-chkp-template
           Value: !Ref ConfigurationTemplate
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   VpcEndpointService:
     Type: AWS::EC2::VPCEndpointService
     Properties:
@@ -643,6 +666,8 @@ Resources:
             - ""
             - - !Ref AWS::StackName
               - "-tg1"
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -687,6 +712,7 @@ Resources:
         ConfigurationTemplate: !Ref ConfigurationTemplate
         IPMode: !Ref IPMode
         ExistingSecurityGroup: !Ref ExistingSecurityGroup
+        CustomAmiId: !Ref CustomAmiId
   ManagementStack:
     Type: AWS::CloudFormation::Stack
     Condition: DeployManagement
@@ -722,6 +748,7 @@ Resources:
             - 'controller="gwlb-controller"'
             - 'echo "Creating CME configuration"'
             - 'autoprov_cfg -f init AWS -mn "${mgmt}" -tn "${conf_template}" -cn "${controller}" -po "${policy}" -otp "${sic}" -r "${region}" -ver "${version}" -iam'
+            - 'autoprov_cfg -f set controller AWS -cn "${controller}" -ct "${conf_template}"'
             - 'echo -e "\nFinished Bootstrap script\n"'
 Outputs:
   VPCID:

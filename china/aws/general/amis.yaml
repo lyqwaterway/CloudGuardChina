@@ -1,6 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Returns a Check Point Amazon Machine ID (20230110)
+Description: Returns a Check Point Amazon Machine ID (20261008)
 Parameters:
+  ResolveImageId:
+    Description: Whether to emit the ImageId output. Set to 'false' by callers that
+      only need ProductCode for PRM tagging, so a missing RegionMap AMI cannot fail
+      their stack.
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
   Version:
     Description: Security Gateway or Management Server version
     Type: String
@@ -8,31 +17,115 @@ Parameters:
     AllowedValues:
       - R81.10-BYOL-MGMT
       - R81.10-BYOL-GW
+      - R81.10-BYOL-MGMT-BLINK
+      - R81.10-BYOL-MDS-BLINK
       - R81.20-BYOL-MGMT
       - R81.20-BYOL-GW
-      - R82-BYOL-MGMT
+      - R81.20-BYOL-MGMT-BLINK
+      - R81.20-BYOL-MDS-BLINK
       - R82-BYOL-GW
-      - R82.10-BYOL-MGMT
+      - R82-BYOL-MGMT
+      - R82-BYOL-MGMT-BLINK
+      - R82-BYOL-MDS-BLINK
       - R82.10-BYOL-GW
+      - R82.10-BYOL-MGMT
+      - R82.10-BYOL-MGMT-BLINK
+      - R82.10-BYOL-MDS-BLINK
+      - R82.20-BYOL-GW
+      - R82.20-BYOL-MGMT
+      - R82.20-BYOL-MGMT-BLINK
+      - R82.20-BYOL-MDS-BLINK
 Mappings:
   ConverterMap:
     R81.10-BYOL-MGMT:
       Value: R8110BYOLMGMT
     R81.10-BYOL-GW:
       Value: R8110BYOLGW
+      License: BYOLGW
+    R81.10-BYOL-MGMT-BLINK:
+      Value: R8110BYOLMGMTBLINK
+      License: BYOLMGMTBLINK
+    R81.10-BYOL-MDS-BLINK:
+      Value: R8110BYOLMDSBLINK
+      License: BYOLMDSBLINK
     R81.20-BYOL-MGMT:
       Value: R8120BYOLMGMT
+      License: BYOLMGMT
     R81.20-BYOL-GW:
       Value: R8120BYOLGW
+      License: BYOLGW
+    R81.20-BYOL-MGMT-BLINK:
+      Value: R8120BYOLMGMTBLINK
+      License: BYOLMGMTBLINK
+    R81.20-BYOL-MDS-BLINK:
+      Value: R8120BYOLMDSBLINK
+      License: BYOLMDSBLINK
     R82-BYOL-MGMT:
       Value: R82BYOLMGMT
+      License: BYOLMGMT
     R82-BYOL-GW:
       Value: R82BYOLGW
+      License: BYOLGW
     R82.10-BYOL-MGMT:
       Value: R8210BYOLMGMT
+      License: BYOLMGMT
+    R82.10-PAYG-MGMT:
+      Value: R8210PAYGMGMT
+      License: PAYGMGMT
     R82.10-BYOL-GW:
       Value: R8210BYOLGW
-
+      License: BYOLGW
+    R82.10-BYOL-MGMT-BLINK:
+      Value: R8210BYOLMGMTBLINK
+      License: BYOLMGMTBLINK
+    R82.10-PAYG-MGMT-BLINK:
+      Value: R8210PAYGMGMTBLINK
+      License: PAYGMGMTBLINK
+    R82.10-BYOL-MDS-BLINK:
+      Value: R8210BYOLMDSBLINK
+      License: BYOLMDSBLINK
+    R82.20-BYOL-MGMT:
+      Value: R8220BYOLMGMT
+      License: BYOLMGMT
+    R82.20-PAYG-MGMT:
+      Value: R8220PAYGMGMT
+      License: PAYGMGMT
+    R82.20-BYOL-GW:
+      Value: R8220BYOLGW
+      License: BYOLGW
+    R82.20-BYOL-MGMT-BLINK:
+      Value: R8220BYOLMGMTBLINK
+      License: BYOLMGMTBLINK
+    R82.20-BYOL-MDS-BLINK:
+      Value: R8220BYOLMDSBLINK
+      License: BYOLMDSBLINK
+    R82-BYOL-MGMT-BLINK:
+      Value: R82BYOLMGMTBLINK
+      License: BYOLMGMTBLINK
+    R82-BYOL-MDS-BLINK:
+      Value: R82BYOLMDSBLINK
+      License: BYOLMDSBLINK
+  ProductCodeMap:
+    BYOLGW:
+      Value: 263gtcd87e2xefwbacsdwvorx
+    BYOLMGMT:
+      Value: 5y97v3ikpvbmnkbdfpuw4fdra
+    PAYGMGMT:
+      Value: 3ga5yxssxkddsj4y6p5xruc2v
+    PAYGNGTP:
+      Value: 5gfh5kpdgw289zzo0a0b6wkcm
+    PAYGNGTPGW:
+      Value: 5qm3c33cpixiiice1jrxa2pe7
+    PAYGNGTXGW:
+      Value: btpg8hbve0ohybu2bhrqogx4e
+    BYOLMGMTBLINK:
+      Value: r2mqhnnq6tzhxj093vx9wn1u
+    PAYGMGMTBLINK:
+      Value: a5kh1in0ajhmp1442fmwfw6qd
+    BYOLMDSBLINK:
+      Value: 29vbig0ekkx3pscrj2cdjna8i
+    PAYGMDSBLINK:
+      Value: bl1tpb6pd5iesxncxdvgy8oee
   RegionMap:
     cn-northwest-1:
       R8110BYOLMGMT: ami-064a33bb86b69a7d3
@@ -59,4 +152,9 @@ Resources:
 Outputs:
   ImageId:
     Description: Check Point Security Gateway AMI
+    Condition: EmitImageId
     Value: !FindInMap [RegionMap ,!Ref 'AWS::Region', !FindInMap [ConverterMap, !Ref 'Version', Value]]
+  ProductCode:
+    Description: AWS Marketplace product code for Partner Revenue Measurement (PRM)
+      resource tagging
+    Value: !FindInMap [ProductCodeMap, !FindInMap [ConverterMap, !Ref 'Version', License], Value]

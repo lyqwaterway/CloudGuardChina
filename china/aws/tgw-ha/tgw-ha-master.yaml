@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploy a Check Point TGW HA cross AZ Cluster in a new VPC (20260302)
+  Deploy a Check Point TGW HA cross AZ Cluster in a new VPC (20261008)
   See CloudGuard Network for AWS Cross Availability Zone Cluster Deployment Guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -45,6 +45,7 @@ Metadata:
           - GatewayBootstrapScript
           - NTPPrimary
           - NTPSecondary
+          - CustomAmiId
     ParameterLabels:
       AvailabilityZones:
         default: Availability Zones
@@ -112,6 +113,8 @@ Metadata:
         default: Primary NTP server
       NTPSecondary:
         default: Secondary NTP server
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   AvailabilityZones:
     Description: The Availability Zones (AZs) to use for the subnets in the VPC. Select two (the logical order is preserved).
@@ -405,6 +408,12 @@ Parameters:
     Type: String
     Default: 0.pool.ntp.org
     AllowedPattern: '^[\.a-zA-Z0-9\-]*$'
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   AllocateAddress: !Equals [!Ref AllocatePublicAddress, true]
 Resources:
@@ -423,6 +432,7 @@ Resources:
         CreateAttachmentSubnets: true
         AttachmentSubnet1CIDR: !Ref TgwSubnet1CIDR
         AttachmentSubnet2CIDR: !Ref TgwSubnet2CIDR
+        Version: !Join ['-', [!Ref GatewayVersion, GW]]
   InternalRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -430,6 +440,8 @@ Resources:
       Tags:
         - Key: Name
           Value: Private Subnets Route Table
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt VPCStack.Outputs.ProductCode}]
   ClusterStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -468,6 +480,7 @@ Resources:
         GatewayBootstrapScript: !Ref GatewayBootstrapScript
         NTPPrimary: !Ref NTPPrimary
         NTPSecondary: !Ref NTPSecondary
+        CustomAmiId: !Ref CustomAmiId
 Outputs:
   MemberAPublicAddress:
     Condition: AllocateAddress

@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point Management Server (20260531)
+  Deploys a Check Point Management Server (20261008)
   See sk130372 administration guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -300,6 +300,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -317,7 +318,7 @@ Parameters:
     AllowedPattern: '[\$\./a-zA-Z0-9]*'
     NoEcho: true
   ManagementMaintenancePasswordHash:
-    Description: Check Point recommends setting Admin user's password and maintenance-mode password for recovery purposes. For R81.10 and below the Admin user's password is used also as maintenance-mode password. (To generate a password hash use the command "grub2-mkpasswd-pbkdf2" on Linux and paste it here). (optional)
+    Description: Check Point recommends setting Admin user's password and maintenance-mode password for recovery purposes (use command " grub2-mkpasswd-pbkdf2" to get the PASSWORD's hash). For R81.10 and below the Admin user's password is used also as maintenance-mode password. (optional)
     Type: String
     Default: ''
     AllowedPattern: '[\$\./a-zA-Z0-9]*'
@@ -399,13 +400,21 @@ Conditions:
   NoSIC: !Equals [!Ref ManagementSICKey, '']
   PreRole: !And [!Condition UseRole, !Not [!Condition CreateRole], !Not [!Equals [!Ref ManagementPredefinedRole, '']]]
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
+  # R81.10 has no blink management image and is not expected to get one, so it
+  # keeps the ISO product key. R81.20 and above resolve the blink products.
+  UsesIsoMgmtImage: !Equals [!Select [0, !Split ['-', !Ref ManagementVersion]], R81.10]
+  # True iff the image is a blink build - the exact inverse of the AMI choice above.
+  IsBlink: !Not [!Condition UsesIsoMgmtImage]
 Resources:
   AMI:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/amis.yaml
       Parameters:
-        Version: !Join ['-', [!Ref ManagementVersion, MGMT]]
+        Version: !If
+          - UsesIsoMgmtImage
+          - !Join ['-', [!Ref ManagementVersion, MGMT]]
+          - !Join ['-', [!Ref ManagementVersion, MGMT-BLINK]]
   ManagementSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -464,6 +473,9 @@ Resources:
           IpProtocol: tcp
           FromPort: 19009
           ToPort: 19009
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   ManagementRoleStack:
     Type: AWS::CloudFormation::Stack
     Condition: CreateRole
@@ -489,6 +501,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref ManagementName
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       NetworkInterfaces:
         - DeviceIndex: 0
           AssociatePublicIpAddress: false
@@ -500,7 +514,17 @@ Resources:
   ManagementLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: aws-apn-id
+              Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: volume
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         KeyName: !Ref KeyName
         ImageId: !GetAtt AMI.Outputs.ImageId
         InstanceType: !Ref ManagementInstanceType
@@ -531,13 +555,17 @@ Resources:
               - !If [ManageOverInternetAndEIP, '    pub_mgmt=true', '    pub_mgmt=false']
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref ManagementBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref ManagementVersion]]}]
-              - '    python3 /etc/cloud_config.py sicKey=\"${sic}\" installationType=\"management\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260531\" templateName=\"management_gwlb\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" primary=\"${primary_mgmt}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" overTheInternet=\"${pub_mgmt}\" bootstrapScript64=\"${bootstrap}\"'
+              - !If [IsBlink, '    is_blink=true', '    is_blink=false']
+              - '    python3 /etc/cloud_config.py sicKey=\"${sic}\" installationType=\"management\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20261008\" templateName=\"management_gwlb\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" primary=\"${primary_mgmt}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" overTheInternet=\"${pub_mgmt}\" bootstrapScript64=\"${bootstrap}\" isBlink=\"${is_blink}\"'
       VersionDescription: Initial template version
   PublicAddress:
     Type: AWS::EC2::EIP
     Condition: EIP
     Properties:
       Domain: vpc
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AddressAssoc:
     Type: AWS::EC2::EIPAssociation
     Condition: EIP
