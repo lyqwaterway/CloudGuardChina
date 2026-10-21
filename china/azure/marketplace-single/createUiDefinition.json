@@ -5,37 +5,6 @@
   "parameters": {
     "basics": [
       {
-        "name": "extendedZone",
-        "type": "Microsoft.Common.DropDown",
-        "label": "Extended Zone",
-        "defaultValue": "None",
-        "toolTip": "Deploy in Azure Extended Zone for ultra-low latency edge computing. Los Angeles Extended Zone requires West US region. Perth Extended Zone requires Australia East region. Extended Zone requires Premium_LRS and is supported for R81.20 and above. Extended Zone cannot be used with IPv6.",
-        "visible": "[not(equals(basics('availabilityZonesChoice'), 'Yes'))]",
-        "constraints": {
-          "allowedValues": [
-            {
-              "label": "None",
-              "value": "None"
-            }
-          ],
-          "required": true
-        },
-        "validations": [
-          {
-            "isValid": "[or(equals(coalesce(basics('extendedZone'), 'None'), 'None'), and(equals(basics('extendedZone'), 'losangeles'), equals(location(), 'westus')), and(equals(basics('extendedZone'), 'perth'), equals(location(), 'australiaeast')))]",
-            "message": "Extended Zone selection is not compatible with the selected region. Los Angeles Extended Zone requires West US region, Perth Extended Zone requires Australia East region."
-          },
-          {
-            "isValid": "[or(equals(coalesce(basics('extendedZone'), 'None'), 'None'), not(steps('network').enableIpv6))]",
-            "message": "Extended Zone cannot be used with IPv6."
-          },
-          {
-            "isValid": "[or(equals(coalesce(basics('extendedZone'), 'None'), 'None'), and(not(contains(createArray('R81.10'), steps('chkp').cloudGuardVersion)), equals(steps('chkp-advanced').VMDiskType, 'Premium_LRS')))]",
-            "message": "Extended Zone requires version R81.20 or above and VM disk type Premium_LRS (Premium SSD)."
-          }
-        ]
-      },
-      {
         "name": "zoneInfo",
         "type": "Microsoft.Solutions.ArmApiControl",
         "request": {
@@ -913,7 +882,6 @@
           {
             "name": "ipv6InfoBox",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[equals(coalesce(basics('extendedZone'), 'None'), 'None')]",
             "options": {
               "icon": "Info",
               "text": "Enable IPv6 support to add an IPv6 public load balancer frontend and IPv6 configurations on the gateway network interfaces. Existing VNets/subnets are not modified. For required configuration, see sk170760.",
@@ -938,15 +906,14 @@
                 }
               ],
               "required": true
-            },
-            "visible": "[equals(coalesce(basics('extendedZone'), 'None'), 'None')]"
+            }
           },
 
           {
             "name": "ipv6AddressSpace",
             "type": "Microsoft.Common.Section",
             "label": "IPv6 Address Configuration",
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('network').enableIpv6)]",
+            "visible": "[steps('network').enableIpv6]",
             "elements": [
               {
                 "name": "virtualNetworkIpv6AddressPrefix",
@@ -1093,8 +1060,7 @@
                 }
               ],
               "required": true
-            },
-            "visible": "[equals(coalesce(basics('extendedZone'), 'None'), 'None')]"
+            }
           },
           {
             "name": "addStorageAccountIpRules",
@@ -1115,7 +1081,7 @@
               ],
               "required": "[equals(steps('network').storageAccountDeployMode, 'New')]"
             },
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'New'))]"
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'New')]"
           },
           {
             "name": "existingStorageAccount",
@@ -1127,12 +1093,12 @@
             "constraints": {
               "required": "[equals(steps('network').storageAccountDeployMode, 'Existing')]"
             },
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'Existing'))]"
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'Existing')]"
           },
           {
             "name": "infoExistingStorageAccount",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'Existing'))]",
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'Existing')]",
             "options": {
               "icon": "Info",
               "text": "The Storage Account must allow network access from the Serial Console feature, for more information - Serial Console Security.",
@@ -1142,7 +1108,7 @@
           {
             "name": "infoManagedStorageAccount",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'Managed'))]",
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'Managed')]",
             "options": {
               "icon": "Info",
               "text": "Azure will use a managed Storage Account for the deployment, no additional configuration is required."
@@ -1151,7 +1117,7 @@
           {
             "name": "warningNoneStorageAccount",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'None'))]",
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'None')]",
             "options": {
               "icon": "Warning",
               "text": "Please note that deploying without a Storage Account will not allow you to use the Serial Console feature. For more information - Azure Serial Console.",
@@ -1191,7 +1157,6 @@
     ],
     "outputs": {
       "location": "[location()]",
-      "extendedZone": "[coalesce(basics('extendedZone'), 'None')]",
       "cloudGuardVersion": "[concat(steps('chkp').cloudGuardVersion, ' - ', coalesce(steps('chkp').R80Offer, 'Bring Your Own License'))]",
       "adminPassword": "[basics('auth').password]",
       "SerialConsolePasswordHash": "[steps('chkp-advanced').AdditionalPassword]",
@@ -1230,12 +1195,12 @@
       "storageAccountDeployMode": "[steps('network').storageAccountDeployMode]",
       "addStorageAccountIpRules": "[steps('network').addStorageAccountIpRules]",
       "existingStorageAccountId": "[steps('network').existingStorageAccount]",
-      "enableIpv6": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), steps('network').enableIpv6, if(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('network').enableIpv6, false))]",
-      "virtualNetworkIpv6AddressPrefix": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.virtualNetworkIpv6AddressPrefix, ''), if(and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('network').enableIpv6), steps('network').ipv6AddressSpace.virtualNetworkIpv6AddressPrefix, ''))]",
-      "Subnet1Ipv6Prefix": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet1Ipv6Prefix, ''), if(and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('network').enableIpv6), steps('network').ipv6AddressSpace.subnet1Ipv6Prefix, ''))]",
-      "Subnet2Ipv6Prefix": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet2Ipv6Prefix, ''), if(and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('network').enableIpv6), steps('network').ipv6AddressSpace.subnet2Ipv6Prefix, ''))]",
-      "Subnet1Ipv6StartAddress": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet1Ipv6StartAddress, ''), if(and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('network').enableIpv6), steps('network').ipv6AddressSpace.subnet1Ipv6StartAddress, ''))]",
-      "Subnet2Ipv6StartAddress": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet2Ipv6StartAddress, ''), if(and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('network').enableIpv6), steps('network').ipv6AddressSpace.subnet2Ipv6StartAddress, ''))]"
+      "enableIpv6": "[steps('network').enableIpv6]",
+      "virtualNetworkIpv6AddressPrefix": "[if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.virtualNetworkIpv6AddressPrefix, '')]",
+      "Subnet1Ipv6Prefix": "[if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet1Ipv6Prefix, '')]",
+      "Subnet2Ipv6Prefix": "[if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet2Ipv6Prefix, '')]",
+      "Subnet1Ipv6StartAddress": "[if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet1Ipv6StartAddress, '')]",
+      "Subnet2Ipv6StartAddress": "[if(steps('network').enableIpv6, steps('network').ipv6AddressSpace.subnet2Ipv6StartAddress, '')]"
     }
   }
 }
