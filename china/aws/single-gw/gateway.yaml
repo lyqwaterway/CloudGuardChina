@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point Security Gateway into an existing VPC (20260507)
+  Deploys a Check Point Security Gateway into an existing VPC (20261008)
   See sk175207 for Gateway administration guide deployment and configuration steps.
 Mappings:
   # Maps Local Zone AZ names to their NetworkBorderGroup.
@@ -80,8 +80,6 @@ Mappings:
       NBG: ap-southeast-1-sin-1
     ap-southeast-4-mel-1a:
       NBG: ap-southeast-4-mel-1
-    cn-north-1-pkx-1a:
-      NBG: cn-north-1-pkx-1
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -127,6 +125,7 @@ Metadata:
           - ControlGatewayOverPrivateOrPublicAddress
           - ManagementServer
           - ConfigurationTemplate
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -194,6 +193,8 @@ Metadata:
         default: Management Server
       ConfigurationTemplate:
         default: Configuration template
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   VPC:
     Type: AWS::EC2::VPC::Id
@@ -331,7 +332,7 @@ Parameters:
     Type: String
     AllowedValues:
       - IPv4
-      # - IPv6
+      - IPv6
       - DualStack
     Default: IPv4
   AllocatePublicAddress:
@@ -345,7 +346,7 @@ Parameters:
     Type: String
     Default: ''
   ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. When supplied, the stack will NOT apply the aws-apn-id PRM tag to the existing Security Group; tag it externally if revenue attribution is required. (optional)
     Type: String
     Default: ''
     AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
@@ -394,6 +395,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -477,13 +479,19 @@ Parameters:
       - public
   ManagementServer:
     Description: The name that represents the Security Management Server in the automatic
-      provisioning configuration.
+      provisioning configuration. (optional)
     Type: String
   ConfigurationTemplate:
     Description: A name of a Security Gateway configuration template in the automatic
-      provisioning configuration.
+      provisioning configuration. (optional)
     Type: String
     MaxLength: 30
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   CreateSecurityGroup: !Equals [!Ref ExistingSecurityGroup, '']
   ProvidedRouteTable: !Not [!Equals [!Ref InternalRouteTable, '']]
@@ -506,6 +514,7 @@ Conditions:
   IsRegionalZone: !Not [!Condition IsLocalZone]
   AllocateAddressLocalZone: !And [!Condition AllocatePublicIPv4, !Condition IsLocalZone]
   AllocateAddressRegional: !And [!Condition AllocatePublicIPv4, !Condition IsRegionalZone]
+  UseCustomAmi: !Not [!Equals [!Ref CustomAmiId, '']]
 Resources:
   GatewayIAMRole:
     Condition: EnableCloudWatch
@@ -549,6 +558,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - ExternalNetworkInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       Description: eth0
       SourceDestCheck: false
       GroupSet:
@@ -565,6 +576,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - InternalNetworkInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       Description: eth1
       SourceDestCheck: false
       GroupSet:
@@ -582,6 +595,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - PermissiveSecurityGroup
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       GroupDescription: Permissive security group.
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -619,6 +634,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref GatewayName
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         - !If
           - ProvidedManagementParameters
           - Key: x-chkp-tags
@@ -632,17 +649,28 @@ Resources:
   GatewayLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: aws-apn-id
+              Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: volume
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         NetworkInterfaces:
           - DeviceIndex: 0
             NetworkInterfaceId: !Ref ExternalNetworkInterface
           - DeviceIndex: 1
             NetworkInterfaceId: !Ref InternalNetworkInterface
         KeyName: !Ref KeyName
-        ImageId: !GetAtt AMI.Outputs.ImageId
+        ImageId: !If [UseCustomAmi, !Ref CustomAmiId, !GetAtt AMI.Outputs.ImageId]
         InstanceType: !Ref GatewayInstanceType
         MetadataOptions:
           HttpTokens: !If [EnableMetaDataToken, required, optional]
+          HttpProtocolIpv6: !If [IsIPv6Enabled, enabled, disabled]
         BlockDeviceMappings:
           - DeviceName: '/dev/xvda'
             Ebs:
@@ -672,7 +700,7 @@ Resources:
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayMaintenancePasswordHash, ')"']]
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref GatewayBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref GatewayVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${token}\"" installationType=\"gateway\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260407\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" "smart1CloudToken=\"${token}\"" installationType=\"gateway\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20261008\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   PublicAddressLocalZone:
     Type: AWS::EC2::EIP
@@ -680,11 +708,17 @@ Resources:
     Properties:
       Domain: vpc
       NetworkBorderGroup: !FindInMap [LocalZoneNetworkBorderGroups, !Ref LocalZoneAz, NBG]
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   PublicAddressRegional:
     Type: AWS::EC2::EIP
     Condition: AllocateAddressRegional
     Properties:
       Domain: vpc
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AddressAssoc:
     Type: AWS::EC2::EIPAssociation
     Condition: AllocatePublicIPv4

@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploy a Check Point TGW HA cross AZ Cluster in a new VPC (20260302)
+  Deploy a Check Point TGW HA cross AZ Cluster in a new VPC (20261008)
   See CloudGuard Network for AWS Cross Availability Zone Cluster Deployment Guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -48,6 +48,7 @@ Metadata:
           - GatewayBootstrapScript
           - NTPPrimary
           - NTPSecondary
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -115,6 +116,8 @@ Metadata:
         default: Primary NTP server
       NTPSecondary:
         default: Secondary NTP server
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   VPC:
     Description: Select an existing VPC.
@@ -403,6 +406,12 @@ Parameters:
     Type: String
     Default: 0.pool.ntp.org
     AllowedPattern: '^[\.a-zA-Z0-9\-]*$'
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   AllocateAddress: !Equals [!Ref AllocatePublicAddress, true]
 Resources:
@@ -442,6 +451,7 @@ Resources:
         GatewayBootstrapScript: !Ref GatewayBootstrapScript
         NTPPrimary: !Ref NTPPrimary
         NTPSecondary: !Ref NTPSecondary
+        CustomAmiId: !Ref CustomAmiId
   TGWRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -449,6 +459,8 @@ Resources:
       Tags:
         - Key: Name
           Value: TGW Subnets
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt ClusterStack.Outputs.ProductCode}]
   TGWDefaultRoute:
     Type: AWS::EC2::Route
     Properties:

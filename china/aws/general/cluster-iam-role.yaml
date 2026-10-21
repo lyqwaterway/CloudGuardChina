@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
-Description: Creates an IAM role for selected permissions (20260531)
+Description: Creates an IAM role for selected permissions (20261008)
 Resources:
   ClusterIAMRole:
     Type: AWS::IAM::Role

@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point Management Server into an existing VPC (20260216)
+  Deploys a Check Point Management Server into an existing VPC (20261008)
   See sk130372 administration guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -45,6 +45,7 @@ Metadata:
           - ManagementBootstrapScript
           - NTPPrimary
           - NTPSecondary
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -80,6 +81,8 @@ Metadata:
         default: STS roles
       ManagementVersion:
         default: Management Version & License
+      CustomAmiId:
+        default: Custom AMI id
       Shell:
         default: Admin shell
       ManagementPasswordHash:
@@ -235,6 +238,7 @@ Parameters:
     Type: String
     AllowedValues:
       - IPv4
+      - IPv6
       - DualStack
     Default: IPv4
   AllocatePublicAddress:
@@ -310,6 +314,13 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(|ami-[0-9a-f]{8}|ami-[0-9a-f]{17})$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx or ami-xxxxxxxxxxxxxxxxx)
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -327,7 +338,7 @@ Parameters:
     AllowedPattern: '[\$\./a-zA-Z0-9]*'
     NoEcho: true
   ManagementMaintenancePasswordHash:
-    Description: Check Point recommends setting Admin user's password and maintenance-mode password for recovery purposes. For R81.10 and below the Admin user's password is used also as maintenance-mode password. (To generate a password hash use the command "grub2-mkpasswd-pbkdf2" on Linux and paste it here). (optional)
+    Description: Check Point recommends setting Admin user's password and maintenance-mode password for recovery purposes (use command " grub2-mkpasswd-pbkdf2" to get the PASSWORD's hash). For R81.10 and below the Admin user's password is used also as maintenance-mode password. (optional)
     Type: String
     Default: ''
     AllowedPattern: '[\$\./a-zA-Z0-9]*'
@@ -415,13 +426,26 @@ Conditions:
   NoSIC: !Equals [!Ref SICKey, '']
   PreRole: !And [!Condition UseRole, !Not [!Condition CreateRole], !Not [!Equals [!Ref ManagementPredefinedRole, '']]]
   EnableMetaDataToken: !Equals [!Ref MetaDataToken, true]
+  UseCustomAmi: !Not [!Equals [!Ref CustomAmiId, '']]
+  # R81.10 has no blink management image and is not expected to get one, so it
+  # keeps the ISO product key. R81.20 and above resolve the blink products.
+  UsesIsoMgmtImage: !Equals [!Select [0, !Split ['-', !Ref ManagementVersion]], R81.10]
+  # True iff the image is a blink build - the exact inverse of the AMI choice above.
+  IsBlink: !Not [!Condition UsesIsoMgmtImage]
 Resources:
   AMI:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/amis.yaml
       Parameters:
-        Version: !Join ['-', [!Ref ManagementVersion, MGMT]]
+        # With a custom AMI the ImageId output is unused, so suppress it: the
+        # RegionMap lookup would otherwise fail the stack on an unpublished
+        # version. ProductCode is still emitted for the aws-apn-id tag.
+        ResolveImageId: !If [UseCustomAmi, 'false', 'true']
+        Version: !If
+          - UsesIsoMgmtImage
+          - !Join ['-', [!Ref ManagementVersion, MGMT]]
+          - !Join ['-', [!Ref ManagementVersion, MGMT-BLINK]]
   ManagementSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -560,13 +584,13 @@ Resources:
           - IpProtocol: tcp
             FromPort: 22
             ToPort: 22
-            CidrIp: !Ref GatewaysAddresses
+            CidrIp: !Ref AdminCIDR
         - !If
           - AdminCIDRIsIPv6
           - IpProtocol: tcp
             FromPort: 22
             ToPort: 22
-            CidrIpv6: !Ref GatewaysAddresses
+            CidrIpv6: !Ref AdminCIDR
           - !Ref AWS::NoValue
         - !If
           - AdminCIDRIsIPv6
@@ -574,13 +598,13 @@ Resources:
           - IpProtocol: tcp
             FromPort: 443
             ToPort: 443
-            CidrIp: !Ref GatewaysAddresses
+            CidrIp: !Ref AdminCIDR
         - !If
           - AdminCIDRIsIPv6
           - IpProtocol: tcp
             FromPort: 443
             ToPort: 443
-            CidrIpv6: !Ref GatewaysAddresses
+            CidrIpv6: !Ref AdminCIDR
           - !Ref AWS::NoValue
         - !If
           - AdminCIDRIsIPv6
@@ -588,13 +612,13 @@ Resources:
           - IpProtocol: tcp
             FromPort: 18190
             ToPort: 18190
-            CidrIp: !Ref GatewaysAddresses
+            CidrIp: !Ref AdminCIDR
         - !If
           - AdminCIDRIsIPv6
           - IpProtocol: tcp
             FromPort: 18190
             ToPort: 18190
-            CidrIpv6: !Ref GatewaysAddresses
+            CidrIpv6: !Ref AdminCIDR
           - !Ref AWS::NoValue
         - !If
           - AdminCIDRIsIPv6
@@ -602,14 +626,17 @@ Resources:
           - IpProtocol: tcp
             FromPort: 19009
             ToPort: 19009
-            CidrIp: !Ref GatewaysAddresses
+            CidrIp: !Ref AdminCIDR
         - !If
           - AdminCIDRIsIPv6
           - IpProtocol: tcp
             FromPort: 19009
             ToPort: 19009
-            CidrIpv6: !Ref GatewaysAddresses
+            CidrIpv6: !Ref AdminCIDR
           - !Ref AWS::NoValue
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   ManagementRoleStack:
     Type: AWS::CloudFormation::Stack
     Condition: CreateRole
@@ -635,6 +662,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref ManagementName
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       NetworkInterfaces:
         - DeviceIndex: 0
           AssociatePublicIpAddress: false
@@ -647,12 +676,23 @@ Resources:
   ManagementLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: aws-apn-id
+              Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: volume
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         KeyName: !Ref KeyName
-        ImageId: !GetAtt AMI.Outputs.ImageId
+        ImageId: !If [UseCustomAmi, !Ref CustomAmiId, !GetAtt AMI.Outputs.ImageId]
         InstanceType: !Ref ManagementInstanceType
         MetadataOptions:
           HttpTokens: !If [EnableMetaDataToken, required, optional]
+          HttpProtocolIpv6: !If [IsIPv6Enabled, enabled, disabled]
         BlockDeviceMappings:
           - DeviceName: '/dev/xvda'
             Ebs:
@@ -685,19 +725,24 @@ Resources:
                 - IsIPv6Enabled
                 - !If [IsIPv4Enabled, "    template_name=\"management_dual_stack\"", "    template_name=\"management_ipv6\""]
                 - "    template_name=\"management\""
+              - !If [AllocatePublicIPv4, !Sub '    eip=${AllocatePublicAddress}', '    eip=false']
               - !If [NoSIC, '    sic=""', !Join ['', ['    sic="$(echo ', 'Fn::Base64': !Ref SICKey, ')"']]]
               - !If [ManageOverInternetAndEIP, '    pub_mgmt=true', '    pub_mgmt=false']
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref ManagementBootstrapScript, ')"']]
               - !Join ['', ['    pwd_hash="$(echo ', 'Fn::Base64': !Ref ManagementPasswordHash, ')"']]
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref ManagementMaintenancePasswordHash, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref ManagementVersion]]}]
-              - '    python3 /etc/cloud_config.py sicKey=\"${sic}\" installationType=\"management\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" "management_installation_type=\"${mgmt_install_type}\"" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" overTheInternet=\"${pub_mgmt}\" bootstrapScript64=\"${bootstrap}\"'
+              - !If [IsBlink, '    is_blink=true', '    is_blink=false']
+              - '    python3 /etc/cloud_config.py sicKey=\"${sic}\" installationType=\"management\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20261008\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" "management_installation_type=\"${mgmt_install_type}\"" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" overTheInternet=\"${pub_mgmt}\" bootstrapScript64=\"${bootstrap}\" isBlink=\"${is_blink}\"'
       VersionDescription: Initial template version
   PublicAddress:
     Type: AWS::EC2::EIP
     Condition: AllocatePublicIPv4
     Properties:
       Domain: vpc
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AddressAssoc:
     Type: AWS::EC2::EIPAssociation
     Condition: AllocatePublicIPv4

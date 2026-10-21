@@ -1,13 +1,14 @@
+---
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploy a traffic-mirror-filter and traffic-mirror-target (20250617)
+Description: Deploy a traffic-mirror-filter and traffic-mirror-target (20261008)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-    - Label:
-        default: General Settings
-      Parameters:
-      - MirroringNetworkInterfaceId
-      - EnvironmentPrefix
+      - Label:
+          default: General Settings
+        Parameters:
+          - MirroringNetworkInterfaceId
+          - EnvironmentPrefix
     ParameterLabels:
       MirroringNetworkInterfaceId:
         default: Mirroring target network interface id

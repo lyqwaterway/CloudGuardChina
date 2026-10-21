@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Create an Auto Scaling group of Check Point gateways into an existing VPC (20260507)
+  Create an Auto Scaling group of Check Point gateways into an existing VPC (20261008)
   See CloudGuard Network for AWS Auto Scale Group deployment guide for detailed deployment and configuration steps
 Metadata:
   AWS::CloudFormation::Interface:
@@ -43,6 +43,7 @@ Metadata:
           - ControlGatewayOverPrivateOrPublicAddress
           - ManagementServer
           - ConfigurationTemplate
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -100,6 +101,8 @@ Metadata:
         default: Management Server Settings - Configuration template
       AutoScaleGroupName:
         default: Auto Scale Group name
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   VPC:
     Description: Select an existing VPC.
@@ -239,7 +242,7 @@ Parameters:
     Type: String
     AllowedValues:
       - IPv4
-      # - IPv6
+      - IPv6
       - DualStack
     Default: IPv4
   VolumeSize:
@@ -303,6 +306,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -377,11 +381,17 @@ Parameters:
     Default: ""
     MaxLength: 100
   ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. When supplied, the stack will NOT apply the aws-apn-id PRM tag to the existing Security Group; tag it externally if revenue attribution is required. (optional)
     Type: String
     Default: ''
     AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
     ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   CreateSecurityGroup: !Equals [!Ref ExistingSecurityGroup, '']
   ProvidedAdminEmail: !Not [!Equals [!Ref AdminEmail, '']]
@@ -391,6 +401,7 @@ Conditions:
   GenerateAutoScalingName: !Equals [!Ref AutoScaleGroupName, ""]
   IsIPv6Enabled: !Not [!Equals [!Ref IPMode, "IPv4"]]
   IsIPv4Enabled: !Not [!Equals [!Ref IPMode, "IPv6"]]
+  UseCustomAmi: !Not [!Equals [!Ref CustomAmiId, '']]
 Resources:
   ChkpGatewayRole:
     Type: AWS::IAM::Role
@@ -434,6 +445,9 @@ Resources:
       Subscription:
         - Endpoint: !Ref AdminEmail
           Protocol: email
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   PermissiveSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Condition: CreateSecurityGroup
@@ -441,6 +455,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join ['_', [!Ref 'AWS::StackName', PermissiveSecurityGroup]]
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       GroupDescription: Permissive security group.
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -480,6 +496,9 @@ Resources:
         - Key: Name
           Value: !Ref GatewayName
           PropagateAtLaunch: true
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
+          PropagateAtLaunch: true
         - Key: x-chkp-tags
           Value: !Join
             - ':'
@@ -490,20 +509,40 @@ Resources:
   GatewayLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: aws-apn-id
+              Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
+          - ResourceType: volume
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
+          - ResourceType: network-interface
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         NetworkInterfaces:
           - DeviceIndex: 0
             AssociatePublicIpAddress: !If [IsIPv4Enabled, true, false]
             Ipv6AddressCount: !If [IsIPv6Enabled, 1, !Ref "AWS::NoValue"]
+            PrimaryIpv6: !If [IsIPv6Enabled, true, !Ref "AWS::NoValue"]
             Groups:
               - !If [CreateSecurityGroup, !Ref PermissiveSecurityGroup, !Ref ExistingSecurityGroup]
         Monitoring:
           Enabled: true
         KeyName: !Ref KeyName
-        ImageId: !GetAtt AMI.Outputs.ImageId
+        ImageId: !If [UseCustomAmi, !Ref CustomAmiId, !GetAtt AMI.Outputs.ImageId]
         InstanceType: !Ref GatewayInstanceType
         MetadataOptions:
           HttpTokens: !If [EnableMetaDataToken, required, optional]
+          HttpProtocolIpv6: !If [IsIPv6Enabled, enabled, disabled]
         BlockDeviceMappings:
           - DeviceName: '/dev/xvda'
             Ebs:
@@ -531,7 +570,7 @@ Resources:
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref GatewayMaintenancePasswordHash, ')"']]
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref GatewayBootstrapScript, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref GatewayVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" installationType=\"autoscale\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260316\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" sicKey=\"${sic}\" installationType=\"autoscale\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20261008\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   GatewayScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy

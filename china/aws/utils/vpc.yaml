@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
-Description: This template creates a Multi-AZ, multi-subnet VPC infrastructure (20260531)
+Description: This template creates a Multi-AZ, multi-subnet VPC infrastructure (20261008)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -177,6 +177,10 @@ Parameters:
     Default: 10.0.42.0/24
     AllowedPattern: '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$'
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28.
+  Version:
+    Description: The Check Point version+license string (e.g. R82-PAYG-NGTX-GW). Used to compute the AWS Marketplace Partner Revenue Measurement (PRM) product code applied as the aws-apn-id tag on resources this template creates.
+    Type: String
+    MinLength: 1
 Conditions:
   4AZs: !Equals [!Ref NumberOfAZs, 4]
   3AZs: !Or [!Equals [!Ref NumberOfAZs, 3], !Condition 4AZs]
@@ -189,7 +193,18 @@ Conditions:
   2AZsAttachmentSubnets: !And [!Condition AttachmentSubnets, !Condition 2AZs]
   3AZsAttachmentSubnets: !And [!Condition AttachmentSubnets, !Condition 3AZs]
   4AZsAttachmentSubnets: !And [!Condition AttachmentSubnets, !Condition 4AZs]
+
 Resources:
+  AMI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/amis.yaml
+      Parameters:
+        Version: !Ref Version
+        # This nested stack is used only for Outputs.ProductCode (aws-apn-id
+        # tagging); the ImageId output is never read here. Suppress it so a
+        # missing marketplace RegionMap entry cannot fail this stack.
+        ResolveImageId: 'false'
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -199,6 +214,8 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref 'AWS::StackName'
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
@@ -207,6 +224,8 @@ Resources:
           Value: !Ref 'AWS::StackName'
         - Key: Network
           Value: Public
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -223,6 +242,8 @@ Resources:
           Value: Public subnet 1
         - Key: Network
           Value: Public
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       MapPublicIpOnLaunch: true
   PublicSubnet2:
     Condition: 2AZs
@@ -236,6 +257,8 @@ Resources:
           Value: Public subnet 2
         - Key: Network
           Value: Public
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       MapPublicIpOnLaunch: true
   PublicSubnet3:
     Condition: 3AZs
@@ -249,6 +272,8 @@ Resources:
           Value: Public subnet 3
         - Key: Network
           Value: Public
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       MapPublicIpOnLaunch: true
   PublicSubnet4:
     Condition: 4AZs
@@ -262,6 +287,8 @@ Resources:
           Value: Public subnet 4
         - Key: Network
           Value: Public
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       MapPublicIpOnLaunch: true
   PublicSubnetRouteTable:
     Type: AWS::EC2::RouteTable
@@ -272,8 +299,11 @@ Resources:
           Value: Public Subnets Route Table
         - Key: Network
           Value: Public
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   PublicSubnetRoute:
     Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref PublicSubnetRouteTable
       DestinationCidrBlock: 0.0.0.0/0
@@ -313,6 +343,8 @@ Resources:
           Value: Private subnet 1
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Condition: 2AZsPrivateSubnets
@@ -325,6 +357,8 @@ Resources:
           Value: Private subnet 2
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   PrivateSubnet3:
     Type: AWS::EC2::Subnet
     Condition: 3AZsPrivateSubnets
@@ -337,6 +371,8 @@ Resources:
           Value: Private subnet 3
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   PrivateSubnet4:
     Type: AWS::EC2::Subnet
     Condition: 4AZsPrivateSubnets
@@ -349,6 +385,8 @@ Resources:
           Value: Private subnet 4
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AttachmentSubnet1:
     Condition: AttachmentSubnets
     Type: AWS::EC2::Subnet
@@ -361,6 +399,8 @@ Resources:
           Value: Attachment subnet 1
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AttachmentSubnet2:
     Condition: AttachmentSubnets
     Type: AWS::EC2::Subnet
@@ -373,6 +413,8 @@ Resources:
           Value: Attachment subnet 2
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AttachmentSubnet3:
     Condition: 3AZsAttachmentSubnets
     Type: AWS::EC2::Subnet
@@ -385,6 +427,8 @@ Resources:
           Value: Attachment subnet 3
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AttachmentSubnet4:
     Condition: 4AZsAttachmentSubnets
     Type: AWS::EC2::Subnet
@@ -397,7 +441,12 @@ Resources:
           Value: Attachment subnet 4
         - Key: Network
           Value: Private
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
 Outputs:
+  ProductCode:
+    Description: PRM product code resolved from the Version parameter. Re-exposed so wrapper templates can tag their own resources via !GetAtt VPCStack.Outputs.ProductCode without adding their own AMI sub-stack.
+    Value: !GetAtt AMI.Outputs.ProductCode
   VPCID:
     Value: !Ref VPC
     Description: VPC ID.

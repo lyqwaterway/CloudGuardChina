@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point Security Gateway into a new VPC (20260507)
+  Deploys a Check Point Security Gateway into a new VPC (20261008)
   See sk175207 for Gateway administration guide deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -17,7 +17,6 @@ Metadata:
       - Label:
           default: Advanced Settings
         Parameters:
-          - ExistingSecurityGroup
           - GatewayName
           - VPCCIDR
           - PublicSubnetCIDR
@@ -44,6 +43,7 @@ Metadata:
           - ControlGatewayOverPrivateOrPublicAddress
           - ManagementServer
           - ConfigurationTemplate
+          - CustomAmiId
     ParameterLabels:
       AvailabilityZone:
         default: Availability zone
@@ -53,8 +53,6 @@ Metadata:
         default: Public subnet CIDR
       PrivateSubnetCIDR:
         default: Private subnet CIDR
-      ExistingSecurityGroup:
-        default: Existing Security Group (optional)
       GatewayName:
         default: Gateway Name
       GatewayInstanceType:
@@ -109,13 +107,15 @@ Metadata:
         default: Management Server
       ConfigurationTemplate:
         default: Configuration template
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   AvailabilityZone:
     Description: The availability zone in which to deploy the instance.
     Type: AWS::EC2::AvailabilityZone::Name
     MinLength: 1
   VPCCIDR:
-    Description: The CIDR block of the VPC.
+    Description: The IPv4 CIDR block of the VPC.
     Type: String
     Default: 10.0.0.0/16
     AllowedPattern: '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$'
@@ -252,7 +252,7 @@ Parameters:
     Type: String
     AllowedValues:
       - IPv4
-      # - IPv6
+      - IPv6
       - DualStack
     Default: IPv4
   AllocatePublicAddress:
@@ -305,6 +305,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -387,18 +388,18 @@ Parameters:
       - private
       - public
   ManagementServer:
-    Description: The name that represents the Security Management Server in the automatic provisioning configuration.
+    Description: The name that represents the Security Management Server in the automatic provisioning configuration. (optional)
     Type: String
   ConfigurationTemplate:
-    Description: A name of a Security Gateway configuration template in the automatic provisioning configuration.
+    Description: A name of a Security Gateway configuration template in the automatic provisioning configuration. (optional)
     Type: String
     MaxLength: 30
-  ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
     Type: String
     Default: ''
-    AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
-    ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   ProvidedResourcesTag: !Not [!Equals [!Ref ResourcesTagName, '']]
   IsIPv6Enabled: !Not [!Equals [!Ref IPMode, "IPv4"]]
@@ -420,6 +421,7 @@ Resources:
         PrivateSubnet1CIDR: !Ref PrivateSubnetCIDR
         CreateAttachmentSubnets: false
         IPMode: !Ref IPMode
+        Version: !Join ['-', [!Ref GatewayVersion, GW]]
   InternalRoutingTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -431,6 +433,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - InternalRoutingTable
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt VPCStack.Outputs.ProductCode}]
   InternalNetworkRouteAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -473,7 +477,7 @@ Resources:
         ManagementServer: !Ref ManagementServer
         ConfigurationTemplate: !Ref ConfigurationTemplate
         IPMode: !Ref IPMode
-        ExistingSecurityGroup: !Ref ExistingSecurityGroup
+        CustomAmiId: !Ref CustomAmiId
 Outputs:
   CheckPointInstancePublicAddress:
     Condition: AllocatePublicIPv4

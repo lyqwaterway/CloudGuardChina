@@ -31,6 +31,7 @@ In order to check the template version, please refer to [sk116585](https://suppo
 
 | Template Version | Description                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 20260709         | AWS PRM resource tagging for revenue attribution                                                              |
 | 20260302         | Phone home feature removal.                                                                                      |
 | 20260216         | Dual-stack support for standalone solution via IPMode variable.                                                  |
 | 20240704         | - R80.40 version deprecation.<br/>- R81 version deprecation.                                                     |

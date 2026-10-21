@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: Deploys either a manually configurable or a Check Point CloudGuard IaaS
-  Security Gateway & Management (Standalone) instance into an existing VPC (20260507)
+  Security Gateway & Management (Standalone) instance into an existing VPC (20261008)
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -43,6 +43,7 @@ Metadata:
           - NTPPrimary
           - NTPSecondary
           - GatewaysAddresses
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -102,6 +103,8 @@ Metadata:
         default: Allow SmartConsole connections from these networks
       GatewaysAddresses:
         default: Gateways addresses
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   VPC:
     Type: AWS::EC2::VPC::Id
@@ -291,6 +294,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -361,11 +365,17 @@ Parameters:
     Type: String
     AllowedPattern: '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|[12]?[0-9])|([0-9a-fA-F]{0,4}:){2,7}([0-9a-fA-F]{0,4}|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))$'
   ExistingSecurityGroup:
-    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. (optional)
+    Description: An optional existing Security Group ID (e.g. sg-0123456789abcdef0). If left empty, a new Security Group open to all traffic (0.0.0.0/0) will be created. When supplied, the stack will NOT apply the aws-apn-id PRM tag to the existing Security Group; tag it externally if revenue attribution is required. (optional)
     Type: String
     Default: ''
     AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
     ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   CreateSecurityGroup: !Equals [!Ref ExistingSecurityGroup, '']
   ProvidedResourcesTag: !Not [!Equals [!Ref ResourcesTagName, '']]
@@ -382,18 +392,8 @@ Conditions:
     !And [!Condition IsIPv6Enabled, !Condition ProvidedRouteTable]
   AllocatePublicIPv4:
     !And [!Equals [!Ref AllocatePublicAddress, true], !Condition IsIPv4Enabled]
+  UseCustomAmi: !Not [!Equals [!Ref CustomAmiId, '']]
 Resources:
-  ReadyHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-    Condition: AllocatePublicIPv4
-    Properties: {}
-  ReadyCondition:
-    Type: AWS::CloudFormation::WaitCondition
-    Condition: AllocatePublicIPv4
-    DependsOn: StandaloneInstance
-    Properties:
-      Handle: !Ref ReadyHandle
-      Timeout: 1800
   StandaloneIAMRole:
     Condition: EnableCloudWatch
     Type: AWS::IAM::Role
@@ -411,7 +411,7 @@ Resources:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
-      Roles: !Ref StandaloneIAMRole
+      Roles: [!Ref StandaloneIAMRole]
   CloudwatchPolicy:
     Condition: EnableCloudWatch
     Type: AWS::CloudFormation::Stack
@@ -426,6 +426,12 @@ Resources:
       TemplateURL: https://cgns-china-cft.s3.us-east-1.amazonaws.com/utils/amis.yaml
       Parameters:
         Version: !If [IsBYOL, !Join ['-', [!Ref StandaloneVersion, MGMT]], !Ref StandaloneVersion]
+        # This stack must always exist: 7 resources below read
+        # AMI.Outputs.ProductCode for their aws-apn-id PRM tag. Only the ImageId
+        # output is unwanted when a custom AMI is supplied -- and resolving it
+        # anyway would make a marketplace RegionMap entry a hard requirement for
+        # a deployment that uses no marketplace image.
+        ResolveImageId: !If [UseCustomAmi, 'false', 'true']
   ExternalNetworkInterface:
     Type: AWS::EC2::NetworkInterface
     Properties:
@@ -435,6 +441,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - ExternalNetworkInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       Description: eth0
       SourceDestCheck: false
       GroupSet:
@@ -450,6 +458,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - InternalNetworkInterface
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       Description: eth1
       SourceDestCheck: false
       GroupSet:
@@ -466,6 +476,8 @@ Resources:
             - _
             - - !If [ProvidedResourcesTag, !Ref ResourcesTagName, !Ref 'AWS::StackName']
               - PermissiveSecurityGroup
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       GroupDescription: Permissive security group.
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -503,20 +515,33 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref StandaloneName
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   GatewayLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: aws-apn-id
+              Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
       LaunchTemplateData:
+        TagSpecifications:
+          - ResourceType: volume
+            Tags:
+              - Key: aws-apn-id
+                Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
         NetworkInterfaces:
           - DeviceIndex: 0
             NetworkInterfaceId: !Ref ExternalNetworkInterface
           - DeviceIndex: 1
             NetworkInterfaceId: !Ref InternalNetworkInterface
         KeyName: !Ref KeyName
-        ImageId: !GetAtt AMI.Outputs.ImageId
+        ImageId: !If [UseCustomAmi, !Ref CustomAmiId, !GetAtt AMI.Outputs.ImageId]
         InstanceType: !Ref StandaloneInstanceType
         MetadataOptions:
           HttpTokens: !If [EnableMetaDataToken, required, optional]
+          HttpProtocolIpv6: !If [IsIPv6Enabled, enabled, disabled]
         BlockDeviceMappings:
           - DeviceName: '/dev/xvda'
             Ebs:
@@ -537,17 +562,21 @@ Resources:
               - '    set -e'
               - !Sub '    admin_shell=${Shell} ; hostname=${StandaloneHostname} ; allow_info=${AllowUploadDownload} ; cw=${CloudWatch} ; ntp1=${NTPPrimary} ; ntp2=${NTPSecondary} ; eic=${EnableInstanceConnect} ; admin_subnet=${AdminCIDR}'
               - !If [IsIPv6Enabled, !If [IsIPv4Enabled, '    template_name="standalone_dual_stack"', '    template_name="standalone_ipv6"'], '    template_name="standalone"']
+              - !If [AllocatePublicIPv4, !Sub '    eip=${AllocatePublicAddress}', '    eip=false']
               - !Join ['', ['    bootstrap="$(echo ', 'Fn::Base64': !Ref StandaloneBootstrapScript, ')"']]
               - !Join ['', ['    pwd_hash="$(echo ', 'Fn::Base64': !Ref StandalonePasswordHash, ')"']]
               - !Join ['', ['    maintenance_pwd_hash="$(echo ', 'Fn::Base64': !Ref StandaloneMaintenancePasswordHash, ')"']]
               - !Sub ['    version=${Version}', {Version: !Select [0, !Split ['-', !Ref StandaloneVersion]]}]
-              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" installationType=\"standalone\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20260302\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
+              - '    python3 /etc/cloud_config.py enableCloudWatch=\"${cw}\" installationType=\"standalone\" osVersion=\"${version}\" allowUploadDownload=\"${allow_info}\" templateVersion=\"20261008\" templateName=\"${template_name}\" shell=\"${admin_shell}\" enableInstanceConnect=\"${eic}\" hostName=\"${hostname}\" ntpPrimary=\"${ntp1}\" ntpSecondary=\"${ntp2}\" passwordHash=\"${pwd_hash}\" MaintenanceModePassword=\"${maintenance_pwd_hash}\" adminSubnet=\"${admin_subnet}\" allocatePublicAddress=\"${eip}\" bootstrapScript64=\"${bootstrap}\"'
       VersionDescription: Initial template version
   PublicAddress:
     Type: AWS::EC2::EIP
     Condition: AllocatePublicIPv4
     Properties:
       Domain: vpc
+      Tags:
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt AMI.Outputs.ProductCode}]
   AddressAssoc:
     Type: AWS::EC2::EIPAssociation
     DependsOn: StandaloneInstance

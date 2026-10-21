@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 Description: |
-  Deploys a Check Point TGW Cross Availabilty Zone Cluster into an existing VPC (20260507).
+  Deploys a Check Point TGW Cross Availabilty Zone Cluster into an existing VPC (20261008).
   See CloudGuard Network for AWS Cross Availability Zone Cluster Deployment guide for detailed deployment and configuration steps.
 Metadata:
   AWS::CloudFormation::Interface:
@@ -49,6 +49,7 @@ Metadata:
           - GatewayBootstrapScript
           - NTPPrimary
           - NTPSecondary
+          - CustomAmiId
     ParameterLabels:
       VPC:
         default: VPC
@@ -118,6 +119,8 @@ Metadata:
         default: Existing Security Group (optional)
       NTPSecondary:
         default: Secondary NTP server
+      CustomAmiId:
+        default: Custom AMI id
 Parameters:
   VPC:
     Description: Select an existing VPC.
@@ -329,6 +332,7 @@ Parameters:
       - R81.20-BYOL
       - R82-BYOL
       - R82.10-BYOL
+      - R82.20-BYOL
   Shell:
     Description: Change the admin shell to enable advanced command line configuration.
     Type: String
@@ -414,6 +418,12 @@ Parameters:
     Default: ''
     AllowedPattern: '^(sg-[0-9a-f]{8,17})?$'
     ConstraintDescription: Must be a valid Security Group ID (e.g. sg-0123456789abcdef0) or left empty.
+  CustomAmiId:
+    Description: Custom AMI id to deploy. When set, the AMI is used as-is and the amis.yaml region/version lookup is bypassed, so staging / candidate images can be deployed before publication. Leave empty to resolve the AMI by region and version. (optional)
+    Type: String
+    Default: ''
+    AllowedPattern: '^(ami-[0-9a-f]{8,17})?$'
+    ConstraintDescription: must be empty or a valid AMI id (ami-xxxxxxxx)
 Conditions:
   AllocateAddress: !Equals [!Ref AllocatePublicAddress, true]
 Resources:
@@ -454,6 +464,7 @@ Resources:
         NTPPrimary: !Ref NTPPrimary
         ExistingSecurityGroup: !Ref ExistingSecurityGroup
         NTPSecondary: !Ref NTPSecondary
+        CustomAmiId: !Ref CustomAmiId
   TGWRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -461,6 +472,8 @@ Resources:
       Tags:
         - Key: Name
           Value: TGW Subnets
+        - Key: aws-apn-id
+          Value: !Sub ['pc:${Code}', {Code: !GetAtt ClusterStack.Outputs.ProductCode}]
   TGWDefaultRoute:
     Type: AWS::EC2::Route
     Properties:

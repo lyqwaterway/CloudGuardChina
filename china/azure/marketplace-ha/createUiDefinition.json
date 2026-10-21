@@ -5,37 +5,6 @@
   "parameters": {
     "basics": [
       {
-        "name": "extendedZone",
-        "type": "Microsoft.Common.DropDown",
-        "label": "Extended Zone",
-        "defaultValue": "None",
-        "toolTip": "Deploy in Azure Extended Zone for ultra-low latency edge computing. Los Angeles Extended Zone requires West US region. Perth Extended Zone requires Australia East region. Extended Zone requires Premium_LRS and is supported for R81.20 and above. Extended Zone cannot be combined with Public IP Prefix.",
-        "visible": "[not(equals(basics('availabilityZonesChoice'), 'Yes'))]",
-        "constraints": {
-          "allowedValues": [
-            {
-              "label": "None",
-              "value": "None"
-            }
-          ],
-          "required": true
-        },
-        "validations": [
-          {
-            "isValid": "[or(equals(coalesce(basics('extendedZone'), 'None'), 'None'), and(equals(basics('extendedZone'), 'losangeles'), equals(location(), 'westus')), and(equals(basics('extendedZone'), 'perth'), equals(location(), 'australiaeast')))]",
-            "message": "Extended Zone selection is not compatible with the selected region. Los Angeles Extended Zone requires West US region, Perth Extended Zone requires Australia East region."
-          },
-          {
-            "isValid": "[or(equals(coalesce(basics('extendedZone'), 'None'), 'None'), not(equals(steps('chkp-advanced').publicIPPrefix, 'yes')))]",
-            "message": "Extended Zone cannot be combined with Public IP Prefix."
-          },
-          {
-            "isValid": "[or(equals(coalesce(basics('extendedZone'), 'None'), 'None'), and(not(contains(createArray('R81.10'), steps('chkp').cloudGuardVersion)), equals(steps('chkp-advanced').VMDiskType, 'Premium_LRS')))]",
-            "message": "Extended Zone requires version R81.20 or above and VM disk type Premium_LRS (Premium SSD)."
-          }
-        ]
-      },
-      {
         "name": "zoneInfo",
         "type": "Microsoft.Solutions.ArmApiControl",
         "request": {
@@ -886,8 +855,7 @@
                   "value": "yes"
                 }
               ]
-            },
-            "visible": "[equals(coalesce(basics('extendedZone'), 'None'), 'None')]"
+            }
           },
           {
             "name": "createNewIPPrefix",
@@ -907,7 +875,7 @@
                 }
               ]
             },
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('chkp-advanced').publicIPPrefix, 'yes'))]"
+            "visible": "[equals(steps('chkp-advanced').publicIPPrefix, 'yes')]"
           },
           {
             "name": "ipPrefixExistingResourceId",
@@ -920,7 +888,7 @@
               "regex": "^[a-z0-9A-Z -.:/n]{1,}$",
               "validationMessage": "Only alphanumeric characters, hyphens, spaces, periods, and colons are allowed."
             },
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), and(equals(steps('chkp-advanced').publicIPPrefix, 'yes'), equals(steps('chkp-advanced').createNewIPPrefix, 'no')))]"
+            "visible": "[and(equals(steps('chkp-advanced').publicIPPrefix, 'yes'), equals(steps('chkp-advanced').createNewIPPrefix, 'no'))]"
           }
         ]
       },
@@ -1255,8 +1223,7 @@
                 }
               ],
               "required": true
-            },
-            "visible": "[equals(coalesce(basics('extendedZone'), 'None'), 'None')]"
+            }
           },
           {
             "name": "addStorageAccountIpRules",
@@ -1277,7 +1244,7 @@
               ],
               "required": "[equals(steps('network').storageAccountDeployMode, 'New')]"
             },
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'New'))]"
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'New')]"
           },
           {
             "name": "existingStorageAccount",
@@ -1289,12 +1256,12 @@
             "constraints": {
               "required": "[equals(steps('network').storageAccountDeployMode, 'Existing')]"
             },
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'Existing'))]"
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'Existing')]"
           },
           {
             "name": "infoExistingStorageAccount",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'Existing'))]",
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'Existing')]",
             "options": {
               "icon": "Info",
               "text": "The Storage Account must allow network access from the Serial Console feature, for more information - Serial Console Security.",
@@ -1304,7 +1271,7 @@
           {
             "name": "infoManagedStorageAccount",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'Managed'))]",
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'Managed')]",
             "options": {
               "icon": "Info",
               "text": "Azure will use a managed Storage Account for the deployment, no additional configuration is required."
@@ -1313,7 +1280,7 @@
           {
             "name": "warningNoneStorageAccount",
             "type": "Microsoft.Common.InfoBox",
-            "visible": "[and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('network').storageAccountDeployMode, 'None'))]",
+            "visible": "[equals(steps('network').storageAccountDeployMode, 'None')]",
             "options": {
               "icon": "Warning",
               "text": "Please note that deploying without a Storage Account will not allow you to use the Serial Console feature. For more information - Azure Serial Console.",
@@ -1356,7 +1323,6 @@
     ],
     "outputs": {
       "location": "[location()]",
-      "extendedZone": "[coalesce(basics('extendedZone'), 'None')]",
       "cloudGuardVersion": "[concat(steps('chkp').cloudGuardVersion, ' - ', coalesce(steps('chkp').R80Offer, 'Bring Your Own License'))]",
       "adminPassword": "[basics('auth').password]",
       "authenticationType": "[basics('auth').authenticationType]",
@@ -1385,9 +1351,9 @@
       "availabilityZonesChoice": "[basics('availabilityZonesChoice')]",
       "customMetrics": "[steps('chkp-advanced').customMetrics]",
       "floatingIP": "[steps('chkp-advanced').floatingIP]",
-      "publicIPPrefix": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), steps('chkp-advanced').publicIPPrefix, if(equals(coalesce(basics('extendedZone'), 'None'), 'None'), steps('chkp-advanced').publicIPPrefix, 'no'))]",
-      "createNewIPPrefix": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), if(equals(steps('chkp-advanced').publicIPPrefix, 'yes'), steps('chkp-advanced').createNewIPPrefix, 'no'), if(and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('chkp-advanced').publicIPPrefix, 'yes')), steps('chkp-advanced').createNewIPPrefix, 'no'))]",
-      "ipPrefixExistingResourceId": "[if(equals(basics('availabilityZonesChoice'), 'Yes'), if(and(equals(steps('chkp-advanced').publicIPPrefix, 'yes'), equals(steps('chkp-advanced').createNewIPPrefix, 'no')), steps('chkp-advanced').ipPrefixExistingResourceId, ''), if(and(equals(coalesce(basics('extendedZone'), 'None'), 'None'), equals(steps('chkp-advanced').publicIPPrefix, 'yes'), equals(steps('chkp-advanced').createNewIPPrefix, 'no')), steps('chkp-advanced').ipPrefixExistingResourceId, ''))]",
+      "publicIPPrefix": "[steps('chkp-advanced').publicIPPrefix]",
+      "createNewIPPrefix": "[if(equals(steps('chkp-advanced').publicIPPrefix, 'yes'), steps('chkp-advanced').createNewIPPrefix, 'no')]",
+      "ipPrefixExistingResourceId": "[if(and(equals(steps('chkp-advanced').publicIPPrefix, 'yes'), equals(steps('chkp-advanced').createNewIPPrefix, 'no')), steps('chkp-advanced').ipPrefixExistingResourceId, '')]",
       "adminShell": "[steps('chkp-advanced').adminShell]",
       "tagsByResource": "[steps('tags').tagsByResource]",
       "deployNewNSG": "[steps('network').NSG]",
