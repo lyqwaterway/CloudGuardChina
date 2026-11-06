@@ -1420,7 +1420,7 @@
   "resources": [
     {
       "apiVersion": "2020-06-01",
-      "name": "pid-5432b4df-d783-57a2-b65f-39f4bca4974a",
+      "name": "pid-6ce53f1f-1498-4883-9939-1187523e9728-partnercenter",
       "type": "Microsoft.Resources/deployments",
       "properties": {
         "mode": "Incremental",
