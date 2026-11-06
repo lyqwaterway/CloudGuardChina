@@ -67,7 +67,7 @@
             "options": {
               "icon": "Info",
               "text": "See CloudGuard Network for Azure administration guide for detailed deployment and configuration steps.",
-              "uri": "https://sc1.checkpoint.com/documents/IaaS/WebAdminGuides/EN/CP_Azure_VMSS_GWLB/Content/Topics-Azure-VMSS-GWLB/Introduction.htm"
+              "uri": "https://sc1.checkpoint.com/documents/Cloud_Firewall/Azure/VMSS_GWLB/introduction/introduction_to_the_gateway_load_balancer.html"
             }
           },
           {

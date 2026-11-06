@@ -113,7 +113,7 @@
             "options": {
               "icon": "Info",
               "text": "See CloudGuard Network for Azure administration guide for detailed deployment and configuration steps.",
-              "uri": "https://sc1.checkpoint.com/documents/IaaS/WebAdminGuides/EN/CP_CloudGuard_Network_for_Azure_HA_Cluster/Content/Topics-Azure-HA/Introduction.htm"
+              "uri": "https://sc1.checkpoint.com/documents/Cloud_Firewall/Azure/HA_Cluster/index.html"
             }
           },
           {
